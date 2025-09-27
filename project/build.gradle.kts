@@ -1,9 +1,15 @@
 plugins {
     id("java")
+    id("application")  // ← добавляем этот плагин
 }
 
 group = "studying"
 version = "1.0-SNAPSHOT"
+
+// Укажите ваш главный класс
+application {
+    mainClass.set("studying.Main") // замените на ваш реальный класс
+}
 
 repositories {
     mavenCentral()
@@ -22,4 +28,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Настройка манифеста для JAR
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to application.mainClass.get()
+        )
+    }
 }

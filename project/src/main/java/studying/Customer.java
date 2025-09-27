@@ -11,6 +11,14 @@ public class Customer {
 
     @Getter
     @Setter
+    private int armStrength;
+
+    @Getter
+    @Setter
+    private int legStrength;
+
+    @Getter
+    @Setter
     private Car car;
 
     public Customer(String name) {
