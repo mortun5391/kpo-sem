@@ -1,73 +1,51 @@
 package studying;
 
+import studying.domains.Customer;
+import studying.factories.HandCarFactory;
+import studying.factories.PedalCarFactory;
+import studying.params.EmptyEngineParams;
+import studying.params.PedalEngineParams;
+import studying.services.CarService;
+import studying.services.CustomerStorage;
+import studying.services.HseCarService;
+
+
+
 public class Main {
 
     public static void main(String[] args) {
-        var factory = new FactoryAF();
 
-        // Первый день продаж
-        System.out.println("====");
-        System.out.println("День 1");
+        var carService = new CarService();
+        var customerStorage = new CustomerStorage();
+        var hseCarService = new HseCarService(carService, customerStorage);
+        var pedalCarFactory = new PedalCarFactory();
+        var handCarFactory = new HandCarFactory();
 
-        // Добавим автомобили
-        factory.addCar(1);
-        factory.addCar(2);
-        factory.addCar(3);
-        factory.addCar(4);
+        customerStorage.addCustomer(new Customer("Gosha", 4, 6));
+        customerStorage.addCustomer(new Customer("Kolya", 6, 4));
+        customerStorage.addCustomer(new Customer("Kirill", 6, 6));
+        customerStorage.addCustomer(new Customer("Nikita", 4, 4));
 
-        // Добавим покупателей
-        factory.addCustomer(new Customer("Вася"));
-        factory.addCustomer(new Customer("Вова"));
-        factory.addCustomer(new Customer("Света"));
 
-        // Выводим информацию
+
+        carService.addCar(pedalCarFactory, new PedalEngineParams(6));
+        carService.addCar(pedalCarFactory, new PedalEngineParams(6));
+
+        carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
+        carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
+
+
+
+
+
+        System.out.println("== Customers before sales ==");
+        customerStorage.getCustomers().stream().map(Customer::toString).forEach(System.out::println);
+
+        hseCarService.sellCars();
         System.out.println();
-        System.out.println("== Автомобили до продажи ==");
-        factory.printCars();
-        System.out.println();
-        System.out.println("== Покупатели до продажи ==");
-        factory.printCustomers();
 
-        // Продаем автомобили
-        factory.saleCar();
+        System.out.println("== Customers after sales ==");
+        customerStorage.getCustomers().stream().map(Customer::toString).forEach(System.out::println);
 
-        // Выводим информацию
-        System.out.println();
-        System.out.println("== Автомобили после продажи ==");
-        factory.printCars();
-        System.out.println();
-        System.out.println("== Покупатели после продажи ==");
-        factory.printCustomers();
-
-        /* ============================================= */
-        // Второй день продаж
-        System.out.println("====");
-        System.out.println("День 2");
-        // Добавим автомобили
-        factory.addCar(2);
-        factory.addCar(3);
-        // Добавим покупателей
-        factory.addCustomer(new Customer("Сережа"));
-        factory.addCustomer(new Customer("Саша"));
-        factory.addCustomer(new Customer("Миша"));
-
-        // Выводим информацию
-        System.out.println();
-        System.out.println("== Автомобили до продаж ==");
-        factory.printCars();
-        System.out.println();
-        System.out.println("== Покупатели до продажи ==");
-        factory.printCustomers();
-
-        // Продаем автомобили
-        factory.saleCar();
-
-        // Выводим информацию
-        System.out.println();
-        System.out.println("== Автомобили после продаж ==");
-        factory.printCars();
-        System.out.println();
-        System.out.println("== Покупатели после продажи ==");
-        factory.printCustomers();
     }
 }
