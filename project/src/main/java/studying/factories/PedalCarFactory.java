@@ -1,5 +1,6 @@
 package studying.factories;
 
+import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.PedalEngine;
 import studying.interfaces.ICarFactory;
@@ -11,6 +12,7 @@ import studying.params.PedalEngineParams;
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
+@Component
 public class PedalCarFactory implements ICarFactory<PedalEngineParams> {
 
     /**
