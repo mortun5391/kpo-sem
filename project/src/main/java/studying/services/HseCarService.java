@@ -1,5 +1,6 @@
 package studying.services;
 
+import org.springframework.stereotype.Component;
 import studying.domains.Customer;
 import studying.interfaces.ICarProvider;
 import studying.interfaces.ICustomerProvider;
@@ -12,6 +13,7 @@ import java.util.List;
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
+@Component
 public class HseCarService {
     private final ICarProvider carProvider;
     private final ICustomerProvider customerProvider;

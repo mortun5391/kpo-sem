@@ -1,5 +1,6 @@
 package studying.factories;
 
+import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.HandEngine;
 import studying.interfaces.ICarFactory;
@@ -11,6 +12,7 @@ import studying.params.EmptyEngineParams;
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
+@Component
 public class HandCarFactory implements ICarFactory<EmptyEngineParams> {
 
     /**

@@ -1,5 +1,6 @@
 package studying.factories;
 
+import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.HandEngine;
 import studying.domains.LevitatingEngine;
@@ -8,6 +9,13 @@ import studying.interfaces.ICarFactory;
 import studying.params.EmptyEngineParams;
 import studying.params.PedalEngineParams;
 
+/**
+ * Factory for levitating engine cars
+ *
+ * @author Khalilbekov Khalilbek
+ * @since 2025-10-04
+ */
+@Component
 public class LevitatingCarFactory implements ICarFactory<EmptyEngineParams> {
     /**
      * Create car with levitating engine and unique number

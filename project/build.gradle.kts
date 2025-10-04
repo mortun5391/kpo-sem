@@ -1,14 +1,31 @@
 plugins {
-    id("java")
-    id("application")  // ← добавляем этот плагин
+    java
+    checkstyle
+    jacoco
+    id("org.springframework.boot") version "3.4.2"
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
-group = "studying"
-version = "1.0-SNAPSHOT"
+group = "hse"
+version = "0.0.1-SNAPSHOT"
 
-// Укажите ваш главный класс
-application {
-    mainClass.set("studying.Main") // замените на ваш реальный класс
+checkstyle {
+    toolVersion = "10.13.0"
+    isIgnoreFailures = false
+    maxWarnings = 0
+    maxErrors = 0
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
 }
 
 repositories {
@@ -16,25 +33,34 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.projectlombok:lombok:1.18.36")
-    annotationProcessor("org.projectlombok:lombok:1.18.36")
+    implementation("org.springframework.boot:spring-boot-starter")
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
 
-    testCompileOnly("org.projectlombok:lombok:1.18.36")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
+tasks.withType<Test> {
+    useJUnitPlatform()
 
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testLogging {
+        events("PASSED", "FAILED", "SKIPPED", "STANDARD_OUT", "STANDARD_ERROR")
+        showStandardStreams = true
+        showCauses = true
+        showExceptions = true
+        showStackTraces = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+
+    // Принудительно запускать тесты всегда
+    outputs.upToDateWhen { false }
 }
 
 tasks.test {
-    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
 }
 
-// Настройка манифеста для JAR
-tasks.jar {
-    manifest {
-        attributes(
-            "Main-Class" to application.mainClass.get()
-        )
-    }
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
 }

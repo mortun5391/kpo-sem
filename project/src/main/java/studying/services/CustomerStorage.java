@@ -1,5 +1,6 @@
 package studying.services;
 
+import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.Customer;
 import studying.interfaces.ICustomerProvider;
@@ -14,6 +15,7 @@ import java.util.List;
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
+@Component
 public class CustomerStorage implements ICustomerProvider {
     private final List<Customer> customers = new ArrayList<>();
 
