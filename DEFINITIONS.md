@@ -22,3 +22,16 @@
 - бритва Оккама
 - Stream-api что такое какие основные методы есть и зачем нужно
 - +1 уникальный факт связанный с темами выше или семинаром
+
+## Практика 3
+- ServiceLocator 
+- DIP
+- IoC
+- Singleton
+- Prototype
+- юнит тесты junit
+- Mockito (mock + spy)
+- @SpringBootTest
+- @Autowired
+- @Component
+- +1 уникальный факт связанный с темами выше или семинаром
