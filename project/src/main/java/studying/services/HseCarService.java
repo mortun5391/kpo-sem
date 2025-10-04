@@ -1,30 +1,31 @@
 package studying.services;
 
+import java.util.List;
 import org.springframework.stereotype.Component;
 import studying.domains.Customer;
-import studying.interfaces.ICarProvider;
-import studying.interfaces.ICustomerProvider;
+import studying.interfaces.CarProvider;
+import studying.interfaces.CustomerProvider;
 
-import java.util.List;
 
 /**
  * Service for managing cars and customers.
  * Provides functionality for selling cars.
+ *
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
 @Component
 public class HseCarService {
-    private final ICarProvider carProvider;
-    private final ICustomerProvider customerProvider;
+    private final CarProvider carProvider;
+    private final CustomerProvider customerProvider;
 
-    public HseCarService(ICarProvider carProvider, ICustomerProvider customerProvider) {
+    public HseCarService(CarProvider carProvider, CustomerProvider customerProvider) {
         this.carProvider = carProvider;
         this.customerProvider = customerProvider;
     }
 
     /**
-     * Sells a car to all customers who don't have a car
+     * Sells a car to all customers who don't have a car.
      *
      */
     public void sellCars() {

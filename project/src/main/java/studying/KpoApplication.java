@@ -3,6 +3,9 @@ package studying;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * Kpo application.
+ */
 @SpringBootApplication
 public class KpoApplication {
 

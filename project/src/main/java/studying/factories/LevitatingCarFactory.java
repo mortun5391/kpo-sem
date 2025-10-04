@@ -2,30 +2,28 @@ package studying.factories;
 
 import org.springframework.stereotype.Component;
 import studying.domains.Car;
-import studying.domains.HandEngine;
 import studying.domains.LevitatingEngine;
-import studying.domains.PedalEngine;
-import studying.interfaces.ICarFactory;
+import studying.interfaces.CarFactory;
 import studying.params.EmptyEngineParams;
-import studying.params.PedalEngineParams;
 
 /**
- * Factory for levitating engine cars
+ * Factory for levitating engine cars.
  *
  * @author Khalilbekov Khalilbek
  * @since 2025-10-04
  */
 @Component
-public class LevitatingCarFactory implements ICarFactory<EmptyEngineParams> {
+public class LevitatingCarFactory implements CarFactory<EmptyEngineParams> {
     /**
-     * Create car with levitating engine and unique number
+     * Create car with levitating engine and unique number.
+     *
      * @param emptyEngineParams empty param
-     * @param VIN unique number
+     * @param vin unique number
      * @return created car
      */
     @Override
-    public Car createCar(EmptyEngineParams emptyEngineParams, int VIN) {
+    public Car createCar(EmptyEngineParams emptyEngineParams, int vin) {
         var engine = new LevitatingEngine();
-        return new Car(engine, VIN);
+        return new Car(engine, vin);
     }
 }

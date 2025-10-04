@@ -1,19 +1,20 @@
 package studying.domains;
 
 import lombok.ToString;
-import studying.interfaces.IEngine;
+import studying.interfaces.Engine;
 
 /**
- * Levitating engine implementation
+ * Levitating engine implementation.
  *
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
 @ToString
-public class LevitatingEngine implements IEngine {
+public class LevitatingEngine implements Engine {
 
     /**
-     * A method that checks whether an engine is compatible for a customer
+     * A method that checks whether an engine is compatible for a customer.
+     *
      * @param customer customer
      * @return is an engine compatible for a customer
      */

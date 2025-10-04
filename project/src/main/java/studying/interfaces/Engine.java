@@ -2,7 +2,11 @@ package studying.interfaces;
 
 import studying.domains.Customer;
 
-public interface IEngine {
+/**
+ * Interface for car engines.
+ *
+ */
+public interface Engine {
 
     boolean isCompatible(Customer customer);
 

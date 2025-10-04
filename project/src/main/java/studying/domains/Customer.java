@@ -32,6 +32,14 @@ public class Customer {
     @Setter
     private Car car;
 
+    /**
+     * Constructor to create a customer.
+     *
+     * @param name Customer`s nam
+     * @param armStrength arm strength
+     * @param legStrength leg strenght
+     * @param iq customer`s iq
+     */
     public Customer(String name, int armStrength, int legStrength, int iq) {
         this.name = name;
         this.armStrength = armStrength;

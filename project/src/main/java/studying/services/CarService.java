@@ -1,24 +1,24 @@
 package studying.services;
 
-import lombok.extern.apachecommons.CommonsLog;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.Customer;
-import studying.interfaces.ICarFactory;
-import studying.interfaces.ICarProvider;
+import studying.interfaces.CarFactory;
+import studying.interfaces.CarProvider;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Service for managing cars.
  * Provides functionality for adding, issuing, and displaying cars.
- * Implements the {@link ICarProvider} interface for providing cars to customers.
+ * Implements the {@link CarProvider} interface for providing cars to customers.
+ *
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
 @Component
-public class CarService implements ICarProvider {
+public class CarService implements CarProvider {
 
     private final List<Car> cars = new ArrayList<>();
 
@@ -48,11 +48,11 @@ public class CarService implements ICarProvider {
      * Adds a new car to the service using the specified car factory.
      * The car is created with the provided parameters and assigned a unique car number.
      *
-     * @param <TParams> the type of parameters required by the car factory
+     * @param <T> the type of parameters required by the car factory
      * @param carFactory the factory used to create the car
      * @param params the parameters required to create the car
      */
-    public <TParams> void addCar(ICarFactory<TParams> carFactory, TParams params) {
+    public <T> void addCar(CarFactory<T> carFactory, T params) {
         var car = carFactory.createCar(params, ++carNumberCounter);
         cars.add(car);
     }

@@ -15,6 +15,9 @@ import studying.services.CarService;
 import studying.services.CustomerStorage;
 import studying.services.HseCarService;
 
+/**
+ * Tests for kpo application.
+ */
 @SpringBootTest
 public class KpoApplicationTest {
 

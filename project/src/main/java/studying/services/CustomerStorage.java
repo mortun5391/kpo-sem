@@ -1,26 +1,28 @@
 package studying.services;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.Customer;
-import studying.interfaces.ICustomerProvider;
+import studying.interfaces.CustomerProvider;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Service for managing customers
  * Provides functionality for adding customers.
- * Implements the {@link ICustomerProvider} interface for providing customers.
+ * Implements the {@link CustomerProvider} interface for providing customers.
+ *
  * @author Khalilbekov Khalilbek
  * @since 2025-09-28
  */
 @Component
-public class CustomerStorage implements ICustomerProvider {
+public class CustomerStorage implements CustomerProvider {
     private final List<Customer> customers = new ArrayList<>();
 
     /**
-     * Method to get customer`s list
+     * Method to get customer`s list.
+     *
      * @return a list of customers
      * @see Car#isCompatible(Customer)
      */
@@ -30,7 +32,8 @@ public class CustomerStorage implements ICustomerProvider {
     }
 
     /**
-     * Method to add customer to the storage
+     * Method to add customer to the storage.
+     *
      * @param customer customer to add
      * @see Car#isCompatible(Customer)
      */

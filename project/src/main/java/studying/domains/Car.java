@@ -2,7 +2,7 @@ package studying.domains;
 
 import lombok.Getter;
 import lombok.ToString;
-import studying.interfaces.IEngine;
+import studying.interfaces.Engine;
 
 /**
  * It is a car with an engine and a unique number.
@@ -13,18 +13,19 @@ import studying.interfaces.IEngine;
 @ToString
 public class Car {
 
-    private IEngine engine;
+    private Engine engine;
 
     @Getter
-    private int VIN;
+    private int vin;
 
-    public Car(IEngine engine, int VIN) {
+    public Car(Engine engine, int vin) {
         this.engine = engine;
-        this.VIN = VIN;
+        this.vin = vin;
     }
 
     /**
-     * A method that checks whether a car is compatible for a customer
+     * A method that checks whether a car is compatible for a customer.
+     *
      * @param customer customer
      * @return is a car compatible for a customer
      */

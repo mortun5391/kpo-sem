@@ -3,7 +3,11 @@ package studying.interfaces;
 import studying.domains.Car;
 import studying.domains.Customer;
 
-public interface ICarProvider {
+/**
+ * Interface for car provider.
+ *
+ */
+public interface CarProvider {
 
     Car takeCar(Customer customer);
 }
