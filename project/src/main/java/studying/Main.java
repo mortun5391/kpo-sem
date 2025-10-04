@@ -2,6 +2,7 @@ package studying;
 
 import studying.domains.Customer;
 import studying.factories.HandCarFactory;
+import studying.factories.LevitatingCarFactory;
 import studying.factories.PedalCarFactory;
 import studying.params.EmptyEngineParams;
 import studying.params.PedalEngineParams;
@@ -20,11 +21,14 @@ public class Main {
         var hseCarService = new HseCarService(carService, customerStorage);
         var pedalCarFactory = new PedalCarFactory();
         var handCarFactory = new HandCarFactory();
+        var levitatingCarFactory = new LevitatingCarFactory();
 
-        customerStorage.addCustomer(new Customer("Gosha", 4, 6));
-        customerStorage.addCustomer(new Customer("Kolya", 6, 4));
-        customerStorage.addCustomer(new Customer("Kirill", 6, 6));
-        customerStorage.addCustomer(new Customer("Nikita", 4, 4));
+        customerStorage.addCustomer(new Customer("Gosha", 4, 6, 123));
+        customerStorage.addCustomer(new Customer("Kolya", 6, 4, 234));
+        customerStorage.addCustomer(new Customer("Kirill", 6, 6, 111));
+        customerStorage.addCustomer(new Customer("Nikita", 4, 4, 300));
+        customerStorage.addCustomer(new Customer("Ali", 4, 4, 320));
+
 
 
 
@@ -34,6 +38,8 @@ public class Main {
         carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
         carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
 
+        carService.addCar(levitatingCarFactory, EmptyEngineParams.DEFAULT);
+        carService.addCar(levitatingCarFactory, EmptyEngineParams.DEFAULT);
 
 
 

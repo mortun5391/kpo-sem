@@ -26,11 +26,16 @@ public class Customer {
 
     @Getter
     @Setter
+    private int iq;
+
+    @Getter
+    @Setter
     private Car car;
 
-    public Customer(String name, int armStrength, int legStrength) {
+    public Customer(String name, int armStrength, int legStrength, int iq) {
         this.name = name;
         this.armStrength = armStrength;
         this.legStrength = legStrength;
+        this.iq = iq;
     }
 }
