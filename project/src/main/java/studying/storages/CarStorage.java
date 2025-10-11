@@ -1,4 +1,4 @@
-package studying.services;
+package studying.storages;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,7 @@ import studying.interfaces.CarProvider;
  * @since 2025-09-28
  */
 @Component
-public class CarService implements CarProvider {
+public class CarStorage implements CarProvider {
 
     private final List<Car> cars = new ArrayList<>();
 

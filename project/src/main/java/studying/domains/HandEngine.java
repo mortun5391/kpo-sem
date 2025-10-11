@@ -1,6 +1,7 @@
 package studying.domains;
 
 import lombok.ToString;
+import studying.enums.ProductionType;
 import studying.interfaces.Engine;
 
 /**
@@ -19,7 +20,12 @@ public class HandEngine implements Engine {
      * @return is an engine compatible for a customer
      */
     @Override
-    public boolean isCompatible(Customer customer) {
-        return customer.getArmStrength() > 5;
+    public boolean isCompatible(Customer customer, ProductionType type) {
+
+        return switch(type) {
+            case CAR ->  customer.getArmStrength() > 5;
+            case CATAMARAN -> customer.getArmStrength() > 2;
+            case null, default -> throw new RuntimeException("This type of production doesn't exist");
+        };
     }
 }

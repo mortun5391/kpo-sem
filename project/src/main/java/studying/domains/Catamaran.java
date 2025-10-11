@@ -1,25 +1,16 @@
 package studying.domains;
 
 import lombok.Getter;
-import lombok.ToString;
 import studying.enums.ProductionType;
 import studying.interfaces.Engine;
 
-/**
- * It is a car with an engine and a unique number.
- *
- * @author Khalilbekov Khalilbek
- * @since 2025-09-28
- */
-@ToString
-public class Car {
-
+public class Catamaran {
     private Engine engine;
 
     @Getter
     private int vin;
 
-    public Car(Engine engine, int vin) {
+    public Catamaran(Engine engine, int vin) {
         this.engine = engine;
         this.vin = vin;
     }
@@ -31,6 +22,7 @@ public class Car {
      * @return is a car compatible for a customer
      */
     public boolean isCompatible(Customer customer) {
-        return this.engine.isCompatible(customer, ProductionType.CAR);
+        return this.engine.isCompatible(customer, ProductionType.CATAMARAN);
     }
 }
+

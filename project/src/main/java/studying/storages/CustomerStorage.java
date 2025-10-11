@@ -1,4 +1,4 @@
-package studying.services;
+package studying.storages;
 
 import java.util.ArrayList;
 import java.util.List;

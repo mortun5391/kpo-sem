@@ -32,6 +32,10 @@ public class Customer {
     @Setter
     private Car car;
 
+    @Getter
+    @Setter
+    private Catamaran catamaran;
+
     /**
      * Constructor to create a customer.
      *

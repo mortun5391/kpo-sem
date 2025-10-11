@@ -11,8 +11,8 @@ import studying.factories.LevitatingCarFactory;
 import studying.factories.PedalCarFactory;
 import studying.params.EmptyEngineParams;
 import studying.params.PedalEngineParams;
-import studying.services.CarService;
-import studying.services.CustomerStorage;
+import studying.storages.CarStorage;
+import studying.storages.CustomerStorage;
 import studying.services.HseCarService;
 
 /**
@@ -22,7 +22,7 @@ import studying.services.HseCarService;
 public class KpoApplicationTest {
 
     @Autowired
-    private CarService carService;
+    private CarStorage carStorage;
 
     @Autowired
     private CustomerStorage customerStorage;
@@ -42,7 +42,7 @@ public class KpoApplicationTest {
     @Test
     @DisplayName("Тест загрузки контекста")
     void contextLoads() {
-        Assertions.assertNotNull(carService);
+        Assertions.assertNotNull(carStorage);
         Assertions.assertNotNull(customerStorage);
         Assertions.assertNotNull(hseCarService);
 
@@ -61,14 +61,14 @@ public class KpoApplicationTest {
         customerStorage.addCustomer(new Customer("Ali", 4, 4, 320));
 
 
-        carService.addCar(pedalCarFactory, new PedalEngineParams(6));
-        carService.addCar(pedalCarFactory, new PedalEngineParams(6));
+        carStorage.addCar(pedalCarFactory, new PedalEngineParams(6));
+        carStorage.addCar(pedalCarFactory, new PedalEngineParams(6));
 
-        carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
-        carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
+        carStorage.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
+        carStorage.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
 
-        carService.addCar(levitatingCarFactory, EmptyEngineParams.DEFAULT);
-        carService.addCar(levitatingCarFactory, EmptyEngineParams.DEFAULT);
+        carStorage.addCar(levitatingCarFactory, EmptyEngineParams.DEFAULT);
+        carStorage.addCar(levitatingCarFactory, EmptyEngineParams.DEFAULT);
 
         System.out.println("== Customers before sales ==");
         customerStorage.getCustomers().stream().map(Customer::toString).forEach(System.out::println);
@@ -79,11 +79,11 @@ public class KpoApplicationTest {
         System.out.println("== Customers after sales ==");
         customerStorage.getCustomers().stream().map(Customer::toString).forEach(System.out::println);
 
-        carService.addCar(pedalCarFactory, new PedalEngineParams(6));
-        carService.addCar(pedalCarFactory, new PedalEngineParams(6));
+        carStorage.addCar(pedalCarFactory, new PedalEngineParams(6));
+        carStorage.addCar(pedalCarFactory, new PedalEngineParams(6));
 
-        carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
-        carService.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
+        carStorage.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
+        carStorage.addCar(handCarFactory, EmptyEngineParams.DEFAULT);
 
         customerStorage.getCustomers().stream().map(Customer::toString).forEach(System.out::println);
 

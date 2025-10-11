@@ -1,6 +1,7 @@
 package studying.interfaces;
 
 import studying.domains.Customer;
+import studying.enums.ProductionType;
 
 /**
  * Interface for car engines.
@@ -8,6 +9,6 @@ import studying.domains.Customer;
  */
 public interface Engine {
 
-    boolean isCompatible(Customer customer);
+    boolean isCompatible(Customer customer, ProductionType type);
 
 }
