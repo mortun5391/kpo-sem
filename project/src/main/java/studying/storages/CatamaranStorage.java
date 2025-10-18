@@ -1,14 +1,26 @@
 package studying.storages;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.Catamaran;
 import studying.domains.Customer;
+import studying.interfaces.CarProvider;
 import studying.interfaces.CatamaranFactory;
 import studying.interfaces.CatamaranProvider;
 
-import java.util.ArrayList;
-import java.util.List;
 
+
+/**
+ * Service for managing catamarans.
+ * Provides functionality for adding, issuing, and displaying catamarans.
+ * Implements the {@link CarProvider} interface for providing catamarans to customers.
+ *
+ * @author Khalilbekov Khalilbek
+ * @since 2025-09-28
+ */
+@Component
 public class CatamaranStorage implements CatamaranProvider {
     private final List<Catamaran> catamarans = new ArrayList<>();
 
@@ -19,8 +31,8 @@ public class CatamaranStorage implements CatamaranProvider {
      * The car is selected based on compatibility with the customer and is removed
      * from the available cars list after being issued.
      *
-     * @param customer the customer for whom the car is being selected
-     * @return a suitable car or {@code null} if no compatible car is found
+     * @param customer the customer for whom the catamaran is being selected
+     * @return a suitable car or {@code null} if no compatible catamaran is found
      * @see Car#isCompatible(Customer)
      */
     @Override

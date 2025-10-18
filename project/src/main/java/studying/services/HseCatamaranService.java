@@ -1,14 +1,19 @@
 package studying.services;
 
+import java.util.List;
 import org.springframework.stereotype.Component;
 import studying.domains.Customer;
-import studying.interfaces.CarProvider;
-import studying.interfaces.CatamaranFactory;
 import studying.interfaces.CatamaranProvider;
 import studying.interfaces.CustomerProvider;
 
-import java.util.List;
 
+/**
+ * Service for managing catamarans and customers.
+ * Provides functionality for selling catamarans.
+ *
+ * @author Khalilbekov Khalilbek
+ * @since 2025-09-28
+ */
 @Component
 public class HseCatamaranService {
     private final CatamaranProvider catamaranProvider;

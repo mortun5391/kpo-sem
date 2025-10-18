@@ -1,10 +1,18 @@
 package studying.factories;
 
+import org.springframework.stereotype.Component;
 import studying.domains.Catamaran;
 import studying.domains.LevitatingEngine;
 import studying.interfaces.CatamaranFactory;
 import studying.params.EmptyEngineParams;
 
+/**
+ * Factory for levitating engine catamarans.
+ *
+ * @author Khalilbekov Khalilbek
+ * @since 2025-09-28
+ */
+@Component
 public class LevitatingCatamaranFactory implements CatamaranFactory<EmptyEngineParams> {
     /**
      * Create car with levitating engine and unique number.
