@@ -1,12 +1,13 @@
 package studying.builders;
 
 
-import studying.domains.Customer;
-import studying.domains.Report;
-
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import studying.domains.Car;
+import studying.domains.Catamaran;
+import studying.domains.Customer;
+import studying.domains.Report;
 
 /**
  * Класс для составления отчета о работе системы.
@@ -44,6 +45,74 @@ public class ReportBuilder {
         content.append(String.format("Операция: %s", operation));
         content.append(System.lineSeparator());
         return this;
+    }
+
+    /**
+     * Метод для добавления информации о автомобилях в отчет.
+     *
+     * @param cars автомобили
+     * @return {@link ReportBuilder} для дальнейшего составления отчета
+     */
+    public ReportBuilder addCars(List<Car> cars) {
+        content.append("Автомобили:");
+        cars.forEach(car -> content.append(String.format(" - %s", car)));
+        content.append("\n");
+
+        return this;
+    }
+
+    /**
+     * Метод для добавления информации о катамаранах в отчет.
+     *
+     * @param catamarans катамараны
+     * @return {@link ReportBuilder} для дальнейшего составления отчета
+     */
+    public ReportBuilder addCatamarans(List<Catamaran> catamarans) {
+        content.append("Катамараны:");
+        catamarans.forEach(catamaran -> content.append(String.format(" - %s", catamaran)));
+        content.append("\n");
+
+        return this;
+    }
+
+    /**
+     * Метод для добавления информации о текущем состоянии склада автомобилей в отчет.
+     *
+     * @param cars склад автомобилей
+     * @return {@link ReportBuilder} для дальнейшего составления отчета
+     */
+    public ReportBuilder addCarStorageInfo(List<Car> cars) {
+        content.append("Склад автомобилей:");
+        cars.forEach(car -> content.append(String.format(" - %s", car)));
+        content.append("\n");
+
+        return this;
+    }
+
+    /**
+     * Метод для добавления информации о текущем состоянии склада катамаранов в отчет.
+     *
+     * @param catamarans склад катамаранов
+     * @return {@link ReportBuilder} для дальнейшего составления отчета
+     */
+    public ReportBuilder addCatamaranStorageInfo(List<Catamaran> catamarans) {
+        content.append("Склад катамаранов:");
+        catamarans.forEach(catamaran -> content.append(String.format(" - %s", catamaran)));
+        content.append("\n");
+
+        return this;
+    }
+
+    /**
+     * Метод для добавления полной информации о складах в отчет.
+     *
+     * @param cars склад автомобилей
+     * @param catamarans склад катамаранов
+     * @return {@link ReportBuilder} для дальнейшего составления отчета
+     */
+    public ReportBuilder addStorageInfo(List<Car> cars,   List<Catamaran> catamarans) {
+        return this.addCarStorageInfo(cars)
+                .addCatamaranStorageInfo(catamarans);
     }
 
     /**

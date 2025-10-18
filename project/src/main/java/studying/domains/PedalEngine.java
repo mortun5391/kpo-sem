@@ -4,8 +4,6 @@ import lombok.ToString;
 import studying.enums.ProductionType;
 import studying.interfaces.Engine;
 
-import static studying.enums.ProductionType.CATAMARAN;
-
 /**
  * Pedal engine implementation.
  *
@@ -29,10 +27,11 @@ public class PedalEngine implements Engine {
      */
     @Override
     public boolean isCompatible(Customer customer, ProductionType type) {
-        return switch(type) {
+        return switch (type) {
             case CAR ->  customer.getArmStrength() > 5;
             case CATAMARAN -> customer.getArmStrength() > 2;
             case null, default -> throw new RuntimeException("This type of production doesn't exist");
         };
+
     }
 }

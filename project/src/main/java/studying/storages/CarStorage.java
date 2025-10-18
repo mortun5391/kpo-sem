@@ -2,6 +2,7 @@ package studying.storages;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.Customer;
@@ -20,6 +21,7 @@ import studying.interfaces.CarProvider;
 @Component
 public class CarStorage implements CarProvider {
 
+    @Getter
     private final List<Car> cars = new ArrayList<>();
 
     private int carNumberCounter = 0;
@@ -64,4 +66,5 @@ public class CarStorage implements CarProvider {
     public void printCars() {
         cars.stream().forEach(car -> System.out.println(car.toString()));
     }
+
 }

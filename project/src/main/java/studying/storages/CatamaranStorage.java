@@ -2,6 +2,7 @@ package studying.storages;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 import studying.domains.Car;
 import studying.domains.Catamaran;
@@ -22,6 +23,7 @@ import studying.interfaces.CatamaranProvider;
  */
 @Component
 public class CatamaranStorage implements CatamaranProvider {
+    @Getter
     private final List<Catamaran> catamarans = new ArrayList<>();
 
     private int catamaranNumberCounter = 0;

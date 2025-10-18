@@ -1,6 +1,9 @@
 package studying.enums;
 
+/**
+ * Production types.
+ */
 public enum ProductionType {
-    CAR,
-    CATAMARAN
+    CATAMARAN,
+    CAR
 }

@@ -21,9 +21,10 @@ public class LevitatingEngine implements Engine {
      */
     @Override
     public boolean isCompatible(Customer customer, ProductionType type) {
-        return switch(type) {
-            case CAR ->  customer.getIq() > 300;
+        return switch (type) {
+            case CAR -> customer.getIq() > 300;
             case CATAMARAN -> customer.getIq() > 200;
             case null, default -> throw new RuntimeException("This type of production doesn't exist");
-        };    }
+        };
+    }
 }
