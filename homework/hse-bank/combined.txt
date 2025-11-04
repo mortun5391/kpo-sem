@@ -1,0 +1,3227 @@
+// AdvancedAnalyticsCommand.java
+package hse.hsebank.commands;
+
+import hse.hsebank.console.ConsolePrinter;
+import hse.hsebank.facade.AnalyticsFacade;
+import hse.hsebank.utils.InputValidator;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+
+@Component
+public class AdvancedAnalyticsCommand implements Command {
+    private final AnalyticsFacade analyticsFacade;
+    private final InputValidator inputValidator;
+
+    public AdvancedAnalyticsCommand(AnalyticsFacade analyticsFacade, InputValidator inputValidator) {
+        this.analyticsFacade = analyticsFacade;
+        this.inputValidator = inputValidator;
+    }
+
+    @Override
+    public void execute() {
+        ConsolePrinter.printSectionTitle("Advanced Analytics");
+
+        System.out.println("1. Today's Summary");
+        System.out.println("2. Current Month Summary");
+        System.out.println("3. Custom Period Summary");
+        System.out.println("4. Top Categories Analysis");
+
+        int choice = inputValidator.getIntInput("Choose analytics type: ");
+
+        switch (choice) {
+            case 1 -> showTodaySummary();
+            case 2 -> showCurrentMonthSummary();
+            case 3 -> showCustomPeriodSummary();
+            case 4 -> showTopCategoriesAnalysis();
+            default -> ConsolePrinter.printError("Invalid choice");
+        }
+    }
+
+    private void showTodaySummary() {
+        ConsolePrinter.printSectionTitle("Today's Financial Summary");
+
+        BigDecimal todayIncome = analyticsFacade.getTotalIncome(
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().atTime(23, 59, 59)
+        );
+
+        BigDecimal todayExpenses = analyticsFacade.getTotalExpenses(
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().atTime(23, 59, 59)
+        );
+
+        BigDecimal todayBalance = todayIncome.subtract(todayExpenses);
+
+        printFinancialSummary(todayIncome, todayExpenses, todayBalance);
+
+        showPeriodCategories(
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().atTime(23, 59, 59),
+                "Today"
+        );
+    }
+
+    private void showCurrentMonthSummary() {
+        ConsolePrinter.printSectionTitle("Current Month Financial Summary");
+
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endOfMonth = LocalDate.now().withDayOfMonth(
+                LocalDate.now().lengthOfMonth()
+        ).atTime(23, 59, 59);
+
+        BigDecimal monthIncome = analyticsFacade.getTotalIncome(startOfMonth, endOfMonth);
+        BigDecimal monthExpenses = analyticsFacade.getTotalExpenses(startOfMonth, endOfMonth);
+        BigDecimal monthBalance = monthIncome.subtract(monthExpenses);
+
+        printFinancialSummary(monthIncome, monthExpenses, monthBalance);
+
+        showPeriodCategories(startOfMonth, endOfMonth, "This Month");
+    }
+
+    private void showCustomPeriodSummary() {
+        ConsolePrinter.printSectionTitle("Custom Period Analysis");
+
+        System.out.println("Enter start date (YYYY-MM-DD): ");
+        String startDateStr = inputValidator.getStringInput("");
+        LocalDate startDate = LocalDate.parse(startDateStr);
+
+        System.out.println("Enter end date (YYYY-MM-DD): ");
+        String endDateStr = inputValidator.getStringInput("");
+        LocalDate endDate = LocalDate.parse(endDateStr);
+
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(23, 59, 59);
+
+        AnalyticsFacade.FinancialSummary summary = analyticsFacade.getFinancialSummary(start, end);
+
+        ConsolePrinter.printSectionTitle(
+                String.format("Period: %s to %s",
+                        startDate.format(DateTimeFormatter.ISO_DATE),
+                        endDate.format(DateTimeFormatter.ISO_DATE))
+        );
+
+        printFinancialSummary(
+                summary.getTotalIncome(),
+                summary.getTotalExpenses(),
+                summary.getNetBalance()
+        );
+
+        showPeriodCategories(start, end, "Selected Period");
+    }
+
+    private void showTopCategoriesAnalysis() {
+        ConsolePrinter.printSectionTitle("Top Categories Analysis");
+
+        int limit = inputValidator.getIntInput("Enter number of top categories to show: ");
+
+        ConsolePrinter.printSubMenu("Top Income Categories");
+        Map<String, BigDecimal> topIncome = analyticsFacade.getTopIncomeCategories(limit);
+        if (topIncome.isEmpty()) {
+            ConsolePrinter.printInfo("No income data available");
+        } else {
+            topIncome.forEach((category, amount) ->
+                    System.out.printf(" %s: $%.2f%n", category, amount)
+            );
+        }
+
+        ConsolePrinter.printSubMenu("Top Expense Categories");
+        Map<String, BigDecimal> topExpenses = analyticsFacade.getTopSpendingCategories(limit);
+        if (topExpenses.isEmpty()) {
+            ConsolePrinter.printInfo("No expense data available");
+        } else {
+            topExpenses.forEach((category, amount) ->
+                    System.out.printf(" %s: $%.2f%n", category, amount)
+            );
+        }
+    }
+
+    private void showPeriodCategories(LocalDateTime start, LocalDateTime end, String periodName) {
+        // Income by category
+        ConsolePrinter.printSubMenu(periodName + " - Income by Category");
+        Map<String, BigDecimal> incomeByCategory = analyticsFacade.getIncomeByCategory(start, end);
+        if (incomeByCategory.isEmpty()) {
+            ConsolePrinter.printInfo("No income data for this period");
+        } else {
+            incomeByCategory.forEach((category, amount) ->
+                    System.out.printf(" %s: $%.2f%n", category, amount)
+            );
+        }
+
+        ConsolePrinter.printSubMenu(periodName + " - Expenses by Category");
+        Map<String, BigDecimal> expensesByCategory = analyticsFacade.getExpensesByCategory(start, end);
+        if (expensesByCategory.isEmpty()) {
+            ConsolePrinter.printInfo("No expense data for this period");
+        } else {
+            expensesByCategory.forEach((category, amount) ->
+                    System.out.printf("%s: $%.2f%n", category, amount)
+            );
+        }
+    }
+
+    private void printFinancialSummary(BigDecimal income, BigDecimal expenses, BigDecimal balance) {
+        ConsolePrinter.printTableHeader(new String[]{"Type", "Amount"});
+        ConsolePrinter.printTableRow(new String[]{"Total Income", String.format("$%.2f", income)});
+        ConsolePrinter.printTableRow(new String[]{"Total Expenses", String.format("$%.2f", expenses)});
+
+        String balanceType = balance.compareTo(BigDecimal.ZERO) >= 0 ? "Net Profit" : "Net Loss";
+        String balanceDisplay = String.format("$%.2f", balance.abs());
+        ConsolePrinter.printTableRow(new String[]{balanceType, balanceDisplay});
+        ConsolePrinter.printSeparator();
+
+        if (balance.compareTo(BigDecimal.ZERO) > 0) {
+            ConsolePrinter.printSuccess(String.format("Positive balance: $%.2f", balance));
+        } else if (balance.compareTo(BigDecimal.ZERO) < 0) {
+            ConsolePrinter.printWarning(String.format("Negative balance: $%.2f", balance));
+        } else {
+            ConsolePrinter.printInfo("Break-even: $0.00");
+        }
+    }
+}package hse.hsebank.commands;
+
+/**
+ * Command interface for implementing Command pattern
+ */
+public interface Command {
+    void execute();
+}package hse.hsebank.commands;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.facade.BankAccountFacade;
+import hse.hsebank.utils.InputValidator;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CreateAccountCommand implements Command {
+    private final BankAccountFacade bankAccountFacade;
+    private final InputValidator inputValidator;
+
+    public CreateAccountCommand(BankAccountFacade bankAccountFacade, InputValidator inputValidator) {
+        this.bankAccountFacade = bankAccountFacade;
+        this.inputValidator = inputValidator;
+    }
+
+    @Override
+    public void execute() {
+        System.out.println("\n=== Create Bank Account ===");
+        String name = inputValidator.getStringInput("Enter account name: ");
+
+        try {
+            BankAccount account = bankAccountFacade.createAccount(name);
+            System.out.println("Account created successfully: " + account);
+        } catch (Exception e) {
+            System.out.println("Error creating account: " + e.getMessage());
+        }
+    }
+}package hse.hsebank.commands;
+
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.facade.CategoryFacade;
+import hse.hsebank.utils.InputValidator;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CreateCategoryCommand implements Command {
+    private final CategoryFacade categoryFacade;
+    private final InputValidator inputValidator;
+
+    public CreateCategoryCommand(CategoryFacade categoryFacade, InputValidator inputValidator) {
+        this.categoryFacade = categoryFacade;
+        this.inputValidator = inputValidator;
+    }
+
+    @Override
+    public void execute() {
+        System.out.println("\n=== Create Category ===");
+        String name = inputValidator.getStringInput("Enter category name: ");
+        CategoryType type = inputValidator.getCategoryTypeInput("Enter category type: ");
+
+        try {
+            Category category = categoryFacade.createCategory(type, name);
+            System.out.println("Category created successfully: " + category);
+        } catch (Exception e) {
+            System.out.println("Error creating category: " + e.getMessage());
+        }
+    }
+}package hse.hsebank.commands;
+
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.facade.OperationFacade;
+import hse.hsebank.utils.InputValidator;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+@Component
+public class CreateOperationCommand implements Command {
+    private final OperationFacade operationFacade;
+    private final InputValidator inputValidator;
+
+    public CreateOperationCommand(OperationFacade operationFacade, InputValidator inputValidator) {
+        this.operationFacade = operationFacade;
+        this.inputValidator = inputValidator;
+    }
+
+    @Override
+    public void execute() {
+        System.out.println("\n=== Create Operation ===");
+
+        String accountId = inputValidator.getIdInput("Enter bank account ID: ");
+        String categoryId = inputValidator.getIdInput("Enter category ID: ");
+        CategoryType type = inputValidator.getCategoryTypeInput("Enter operation type (INCOME/OUTCOME): ");
+        BigDecimal amount = inputValidator.getBigDecimalInput("Enter amount: ");
+        String description = inputValidator.getStringInput("Enter description: ");
+
+        try {
+            Operation operation = operationFacade.createOperation(accountId, categoryId, type, amount, description);
+            System.out.println("Operation created successfully: " + operation);
+        } catch (Exception e) {
+            System.out.println("Error creating operation: " + e.getMessage());
+        }
+    }
+}package hse.hsebank.commands;
+
+import hse.hsebank.console.ConsolePrinter;
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.facade.BankAccountFacade;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+@Component
+public class ListAccountsCommand implements Command {
+    private final BankAccountFacade bankAccountFacade;
+
+    public ListAccountsCommand(BankAccountFacade bankAccountFacade) {
+        this.bankAccountFacade = bankAccountFacade;
+    }
+
+    @Override
+    public void execute() {
+        ConsolePrinter.printSectionTitle("Bank Accounts");
+
+        List<BankAccount> accounts = bankAccountFacade.getAllAccounts();
+
+        if (accounts.isEmpty()) {
+            ConsolePrinter.printInfo("No accounts found.");
+            return;
+        }
+
+        ConsolePrinter.printTableHeader(new String[]{"ID", "Name", "Balance"});
+
+        for (BankAccount account : accounts) {
+            ConsolePrinter.printTableRow(new String[]{
+                    account.getId().substring(0, 8) + "...",
+                    account.getName(),
+                    String.format("$%.2f", account.getBalance())
+            });
+        }
+
+        ConsolePrinter.printSeparator();
+        ConsolePrinter.printSuccess("Total accounts: " + accounts.size());
+    }
+}package hse.hsebank.commands;
+
+import hse.hsebank.console.ConsolePrinter;
+import hse.hsebank.domains.Category;
+import hse.hsebank.facade.CategoryFacade;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+@Component
+public class ListCategoriesCommand implements Command {
+    private final CategoryFacade categoryFacade;
+
+    public ListCategoriesCommand(CategoryFacade categoryFacade) {
+        this.categoryFacade = categoryFacade;
+    }
+
+    @Override
+    public void execute() {
+        ConsolePrinter.printSectionTitle("Categories");
+
+        List<Category> categories = categoryFacade.getAllCategories();
+
+        if (categories.isEmpty()) {
+            ConsolePrinter.printInfo("No categories found.");
+            return;
+        }
+
+        ConsolePrinter.printTableHeader(new String[]{"ID", "Type", "Name"});
+
+        for (Category category : categories) {
+
+            ConsolePrinter.printTableRow(new String[]{
+                    category.getId().substring(0, 8) + "...",
+                    " " + category.getType().getDisplayName(),
+                    category.getName()
+            });
+        }
+
+        ConsolePrinter.printSeparator();
+        ConsolePrinter.printSuccess("Total categories: " + categories.size());
+    }
+}package hse.hsebank.commands;
+
+import hse.hsebank.console.ConsolePrinter;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.facade.OperationFacade;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+@Component
+public class ListOperationsCommand implements Command {
+    private final OperationFacade operationFacade;
+
+    public ListOperationsCommand(OperationFacade operationFacade) {
+        this.operationFacade = operationFacade;
+    }
+
+    @Override
+    public void execute() {
+        ConsolePrinter.printSectionTitle("Operations");
+
+        List<Operation> operations = operationFacade.getAllOperations();
+
+        if (operations.isEmpty()) {
+            ConsolePrinter.printInfo("No operations found.");
+            return;
+        }
+
+        ConsolePrinter.printTableHeader(new String[]{"ID", "Type", "Amount", "Date", "Description"});
+
+        for (Operation operation : operations) {
+            String amountColor = operation.isIncome() ? "+$" : "-$";
+
+            ConsolePrinter.printTableRow(new String[]{
+                    operation.getId().substring(0, 8) + "...",
+                    " " + operation.getType().getDisplayName(),
+                    amountColor + String.format("%.2f", operation.getAmount()),
+                    operation.getDate().toLocalDate().toString(),
+                    operation.getDescription().length() > 15 ?
+                            operation.getDescription().substring(0, 12) + "..." :
+                            operation.getDescription()
+            });
+        }
+
+        ConsolePrinter.printSeparator();
+        ConsolePrinter.printSuccess("Total operations: " + operations.size());
+    }
+}// ShowAnalyticsCommand.java
+package hse.hsebank.commands;
+
+import hse.hsebank.facade.AnalyticsFacade;
+import hse.hsebank.facade.BankAccountFacade;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+
+@Component
+public class ShowAnalyticsCommand implements Command {
+    private final AnalyticsFacade analyticsFacade;
+
+    public ShowAnalyticsCommand(AnalyticsFacade analyticsFacade) {
+        this.analyticsFacade = analyticsFacade;
+    }
+
+    @Override
+    public void execute() {
+        System.out.println("\n=== Financial Analytics ===");
+
+        BigDecimal totalIncome = analyticsFacade.getTotalIncome();
+        BigDecimal totalExpenses = analyticsFacade.getTotalExpenses();
+        BigDecimal netBalance = totalIncome.subtract(totalExpenses);
+
+        System.out.printf("Total Income: $%.2f%n", totalIncome);
+        System.out.printf("Total Expenses: $%.2f%n", totalExpenses);
+        System.out.printf("Net Balance: $%.2f%n", netBalance);
+
+        System.out.println("\n=== Income by Category ===");
+        analyticsFacade.getIncomeByCategory().forEach((category, amount) ->
+                System.out.printf("%s: $%.2f%n", category, amount)
+        );
+
+        System.out.println("\n=== Expenses by Category ===");
+        analyticsFacade.getExpensesByCategory().forEach((category, amount) ->
+                System.out.printf("%s: $%.2f%n", category, amount)
+        );
+    }
+}// ConsoleMenu.java (обновленный)
+package hse.hsebank.console;
+
+import hse.hsebank.commands.Command;
+import hse.hsebank.decorators.TimedCommandDecorator;
+import hse.hsebank.utils.InputValidator;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Console menu manager
+ */
+@Component
+public class ConsoleMenu {
+    private final InputValidator inputValidator;
+    private final Map<Integer, Command> commands = new HashMap<>();
+    private boolean running = true;
+
+    public ConsoleMenu(InputValidator inputValidator) {
+        this.inputValidator = inputValidator;
+    }
+
+    public void registerCommand(int choice, Command command) {
+        commands.put(choice, command);
+    }
+
+    public void run() {
+        ConsolePrinter.printWelcome();
+
+        while (running) {
+            showMenu();
+            int choice = inputValidator.getIntInput("Choose action: ");
+
+            Command command = commands.get(choice);
+            if (command != null) {
+                Command timedCommand = new TimedCommandDecorator(command);
+                timedCommand.execute();
+            } else if (choice == 0) {
+                running = false;
+                ConsolePrinter.printGoodbye();
+            } else {
+                ConsolePrinter.printError("Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    private void showMenu() {
+        ConsolePrinter.printMenu(
+                "Main Menu",
+                new String[]{
+                        "Create Bank Account",
+                        "Create Category",
+                        "Create Operation",
+                        "Basic Analytics",
+                        "Advanced Analytics",
+                        "Import Data",
+                        "Export Data",
+                        "Recalculate Balances",
+                        "List Accounts",
+                        "List Categories",
+                        "List Operations"
+                }
+        );
+    }
+
+    public void stop() {
+        this.running = false;
+    }
+}package hse.hsebank.console;
+
+/**
+ * Utility class for console output formatting
+ */
+public class ConsolePrinter {
+
+    public static void printWelcome() {
+        printSeparator();
+        System.out.println("=== HSE Bank: Financial Accounting System ===");
+        System.out.println("Welcome to the financial management system!");
+        printSeparator();
+    }
+
+    public static void printGoodbye() {
+        printSeparator();
+        System.out.println("Thank you for using HSE Bank System!");
+        System.out.println("Goodbye!");
+        printSeparator();
+    }
+
+    public static void printMenu(String title, String[] options) {
+        printSeparator();
+        System.out.println("=== " + title + " ===");
+        for (int i = 0; i < options.length; i++) {
+            System.out.printf("%d. %s%n", i + 1, options[i]);
+        }
+        System.out.println("0. Exit");
+        printSeparator();
+    }
+
+    public static void printSubMenu(String title) {
+        System.out.println("\n=== " + title + " ===");
+    }
+
+    public static void printSuccess(String message) {
+        System.out.println(" " + message);
+    }
+
+    public static void printError(String message) {
+        System.out.println(" Error: " + message);
+    }
+
+    public static void printInfo(String message) {
+        System.out.println(" " + message);
+    }
+
+    public static void printWarning(String message) {
+        System.out.println(" " + message);
+    }
+
+    public static void printSeparator() {
+        System.out.println("----------------------------------------");
+    }
+
+    public static void printDoubleSeparator() {
+        System.out.println("========================================");
+    }
+
+    public static void printTableHeader(String[] headers) {
+        printSeparator();
+        System.out.print("|");
+        for (String header : headers) {
+            System.out.printf(" %-15s |", header);
+        }
+        System.out.println();
+        printSeparator();
+    }
+
+    public static void printTableRow(String[] cells) {
+        System.out.print("|");
+        for (String cell : cells) {
+            System.out.printf(" %-15s |", cell);
+        }
+        System.out.println();
+    }
+
+    public static void printBalance(double balance) {
+        String color = balance >= 0 ? "\u001B[32m" : "\u001B[31m"; // Green for positive, red for negative
+        String reset = "\u001B[0m";
+        System.out.printf("Current balance: %s$%.2f%s%n", color, balance, reset);
+    }
+
+    public static void printSectionTitle(String title) {
+        System.out.println();
+        printDoubleSeparator();
+        System.out.println("  " + title);
+        printDoubleSeparator();
+    }
+}package hse.hsebank;
+
+import hse.hsebank.commands.*;
+import hse.hsebank.console.ConsoleMenu;
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.facade.AnalyticsFacade;
+import hse.hsebank.facade.BankAccountFacade;
+import hse.hsebank.facade.CategoryFacade;
+import hse.hsebank.facade.OperationFacade;
+import hse.hsebank.services.BalanceRecalculationService;
+import hse.hsebank.template.CsvDataImporter;
+import hse.hsebank.template.JsonDataImporter;
+import hse.hsebank.template.YamlDataImporter;
+import hse.hsebank.template.DataImporter;
+import hse.hsebank.utils.InputValidator;
+import hse.hsebank.visitor.CsvExportVisitor;
+import hse.hsebank.visitor.DataExportVisitor;
+import hse.hsebank.visitor.JsonExportVisitor;
+import hse.hsebank.visitor.YamlExportVisitor;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
+/**
+ * Main console application with DI
+ */
+@Component
+public class ConsoleApplication implements CommandLineRunner {
+    private final ConsoleMenu consoleMenu;
+    private final InputValidator inputValidator;
+    private final CreateAccountCommand createAccountCommand;
+    private final CreateCategoryCommand createCategoryCommand;
+    private final CreateOperationCommand createOperationCommand;
+    private final ShowAnalyticsCommand showAnalyticsCommand;
+    private final AdvancedAnalyticsCommand advancedAnalyticsCommand;
+    private final ListAccountsCommand listAccountsCommand;
+    private final ListCategoriesCommand listCategoriesCommand;
+    private final ListOperationsCommand listOperationsCommand;
+    private final BalanceRecalculationService balanceRecalculationService;
+    private final CsvDataImporter csvDataImporter;
+    private final JsonDataImporter jsonDataImporter;
+    private final YamlDataImporter yamlDataImporter;
+    private final JsonExportVisitor jsonExportVisitor;
+    private final CsvExportVisitor csvExportVisitor;
+    private final YamlExportVisitor yamlExportVisitor;
+    private final BankAccountFacade bankAccountFacade;
+    private final CategoryFacade categoryFacade;
+    private final OperationFacade operationFacade;
+
+    public ConsoleApplication(ConsoleMenu consoleMenu,
+                              InputValidator inputValidator,
+                              CreateAccountCommand createAccountCommand,
+                              CreateCategoryCommand createCategoryCommand,
+                              CreateOperationCommand createOperationCommand,
+                              ShowAnalyticsCommand showAnalyticsCommand,
+                              AdvancedAnalyticsCommand advancedAnalyticsCommand,
+                              ListAccountsCommand listAccountsCommand,
+                              ListCategoriesCommand listCategoriesCommand,
+                              ListOperationsCommand listOperationsCommand,
+                              BalanceRecalculationService balanceRecalculationService,
+                              CsvDataImporter csvDataImporter,
+                              JsonDataImporter jsonDataImporter,
+                              YamlDataImporter yamlDataImporter,
+                              JsonExportVisitor jsonExportVisitor,
+                              CsvExportVisitor csvExportVisitor,
+                              YamlExportVisitor yamlExportVisitor,
+                              BankAccountFacade bankAccountFacade,        // ← Добавьте
+                              CategoryFacade categoryFacade,              // ← Добавьте
+                              OperationFacade operationFacade) {
+        this.consoleMenu = consoleMenu;
+        this.inputValidator = inputValidator;
+        this.createAccountCommand = createAccountCommand;
+        this.createCategoryCommand = createCategoryCommand;
+        this.createOperationCommand = createOperationCommand;
+        this.showAnalyticsCommand = showAnalyticsCommand;
+        this.advancedAnalyticsCommand = advancedAnalyticsCommand;
+        this.listAccountsCommand = listAccountsCommand;
+        this.listCategoriesCommand = listCategoriesCommand;
+        this.listOperationsCommand = listOperationsCommand;
+        this.balanceRecalculationService = balanceRecalculationService;
+        this.csvDataImporter = csvDataImporter;
+        this.jsonDataImporter = jsonDataImporter;
+        this.yamlDataImporter = yamlDataImporter;
+        this.jsonExportVisitor = jsonExportVisitor;
+        this.csvExportVisitor = csvExportVisitor;
+        this.yamlExportVisitor = yamlExportVisitor;
+        this.bankAccountFacade = bankAccountFacade;        // ← Добавьте эту строку
+        this.categoryFacade = categoryFacade;              // ← Добавьте эту строку
+        this.operationFacade = operationFacade;
+
+        initializeMenuCommands();
+    }
+
+    private void initializeMenuCommands() {
+        consoleMenu.registerCommand(1, createAccountCommand);
+        consoleMenu.registerCommand(2, createCategoryCommand);
+        consoleMenu.registerCommand(3, createOperationCommand);
+        consoleMenu.registerCommand(4, showAnalyticsCommand);
+        consoleMenu.registerCommand(5, advancedAnalyticsCommand);
+        consoleMenu.registerCommand(6, this::importData);
+        consoleMenu.registerCommand(7, this::exportData);
+        consoleMenu.registerCommand(8, this::recalculateBalances);
+        consoleMenu.registerCommand(9, listAccountsCommand);
+        consoleMenu.registerCommand(10, listCategoriesCommand);
+        consoleMenu.registerCommand(11, listOperationsCommand);
+    }
+
+    @Override
+    public void run(String... args) {
+        consoleMenu.run();
+    }
+
+    private void importData() {
+        String filePath = inputValidator.getStringInput("Enter file path for import: ");
+
+        try {
+            if (!Files.exists(Paths.get(filePath))) {
+                System.out.println("Error: File not found: " + filePath);
+                return;
+            }
+
+            DataImporter importer = selectImporter(filePath);
+            if (importer == null) {
+                System.out.println("Error: Unsupported file format. Supported formats: CSV, JSON, YAML");
+                return;
+            }
+
+            System.out.println("Using " + importer.getSupportedFormat() + " importer...");
+            DataImporter.ImportResult result = importer.importData(filePath);
+
+            if (result.isSuccess()) {
+                System.out.println(" " + result.getMessage());
+                System.out.printf("Imported: %d accounts, %d categories, %d operations%n",
+                        result.getAccountsImported(),
+                        result.getCategoriesImported(),
+                        result.getOperationsImported());
+            } else {
+                System.out.println(" " + result.getMessage());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error during import: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private DataImporter selectImporter(String filePath) {
+        String fileName = filePath.toLowerCase();
+
+        if (fileName.endsWith(".csv")) {
+            return csvDataImporter;
+        } else if (fileName.endsWith(".json")) {
+            return jsonDataImporter;
+        } else if (fileName.endsWith(".yaml") || fileName.endsWith(".yml")) {
+            return yamlDataImporter;
+        }
+
+        return null;
+    }
+
+    private void exportData() {
+        System.out.println("Choose export format:");
+        System.out.println("1. JSON");
+        System.out.println("2. CSV");
+        System.out.println("3. YAML");
+
+        int formatChoice = inputValidator.getIntInput("Select format (1-3): ");
+
+        DataExportVisitor exporter;
+        String fileExtension;
+
+        switch (formatChoice) {
+            case 1:
+                exporter = jsonExportVisitor;
+                fileExtension = ".json";
+                break;
+            case 2:
+                exporter = csvExportVisitor;
+                fileExtension = ".csv";
+                break;
+            case 3:
+                exporter = yamlExportVisitor;
+                fileExtension = ".yaml";
+                break;
+            default:
+                System.out.println("Error: Invalid format choice");
+                return;
+        }
+
+        String filePath = inputValidator.getStringInput("Enter file path for export: ");
+
+        if (!filePath.toLowerCase().endsWith(fileExtension)) {
+            filePath += fileExtension;
+        }
+
+        try {
+            File file = new File(filePath);
+            File parentDir = file.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                parentDir.mkdirs();
+                System.out.println("Created directory: " + parentDir.getPath());
+            }
+
+            List<BankAccount> accounts = bankAccountFacade.getAllAccounts();
+            List<Category> categories = categoryFacade.getAllCategories();
+            List<Operation> operations = operationFacade.getAllOperations();
+
+            boolean success = exporter.exportToFile(filePath, accounts, categories, operations);
+
+            if (success) {
+                System.out.println("Data exported successfully to: " + filePath);
+                System.out.printf("Exported: %d accounts, %d categories, %d operations%n",
+                        accounts.size(), categories.size(), operations.size());
+            } else {
+                System.out.println("Export failed");
+            }
+        } catch (Exception e) {
+            System.out.println("Error during export: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void recalculateBalances() {
+        balanceRecalculationService.recalculateAllBalances();
+        System.out.println("All balances recalculated successfully");
+    }
+}package hse.hsebank.decorators;
+
+import hse.hsebank.commands.Command;
+
+/**
+ * Decorator for measuring command execution time
+ */
+public class TimedCommandDecorator implements Command {
+    private final Command decoratedCommand;
+
+    public TimedCommandDecorator(Command decoratedCommand) {
+        this.decoratedCommand = decoratedCommand;
+    }
+
+    @Override
+    public void execute() {
+        long startTime = System.currentTimeMillis();
+
+        try {
+            decoratedCommand.execute();
+        } finally {
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            System.out.printf("Command executed in %d ms%n", duration);
+        }
+    }
+}package hse.hsebank.domains;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.math.BigDecimal;
+
+/**
+ * Bank account
+ */
+@ToString
+public class BankAccount {
+    @Getter
+    private final String id;
+
+    @Getter @Setter
+    private String name;
+
+    @Getter
+    private BigDecimal balance;
+
+    @JsonCreator
+    public BankAccount(@JsonProperty("id") String id,
+                       @JsonProperty("name") String name,
+                       @JsonProperty("balance") BigDecimal balance) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Account name cannot be empty");
+        }
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Account ID cannot be empty");
+        }
+
+        this.name = name.trim();
+        this.id = id.trim();
+        this.balance = balance != null ? balance : BigDecimal.ZERO;
+    }
+
+    public static BankAccount createNew(String name) {
+        String shortId = hse.hsebank.utils.ShortUUID.generate();
+        return new BankAccount(shortId, name, BigDecimal.ZERO);
+    }
+
+    /**
+     * Process income operation
+     */
+    public void processIncome(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Income amount must be positive");
+        }
+        this.balance = this.balance.add(amount);
+    }
+
+    /**
+     * Process expense operation
+     */
+    public void processExpense(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Expense amount must be positive");
+        }
+        if (this.balance.compareTo(amount) < 0) {
+            throw new IllegalArgumentException("Insufficient funds. Current balance: " + balance);
+        }
+        this.balance = this.balance.subtract(amount);
+    }
+
+    /**
+     * Process operation based on its type
+     */
+    public void processOperation(Operation operation) {
+        if (operation.isIncome()) {
+            processIncome(operation.getAmount());
+        } else if (operation.isExpense()) {
+            processExpense(operation.getAmount());
+        }
+    }
+
+    /**
+     * Recalculate balance based on operations
+     */
+    public void recalculateBalance(BigDecimal newBalance) {
+        if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Balance cannot be negative");
+        }
+        this.balance = newBalance;
+    }
+}package hse.hsebank.domains;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import hse.hsebank.domains.enums.CategoryType;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+/**
+ * Operation category
+ */
+@ToString
+public class Category {
+    @Getter
+    private final String id;
+
+    @Getter @Setter
+    private CategoryType type;
+
+    @Getter @Setter
+    private String name;
+
+    @JsonCreator
+    public Category(@JsonProperty("id") String id,
+                    @JsonProperty("type") CategoryType type,
+                    @JsonProperty("name") String name) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Category ID cannot be null");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("Category type cannot be null");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Category name cannot be empty");
+        }
+
+        this.id = id.trim();
+        this.type = type;
+        this.name = name.trim();
+    }
+
+    /**
+     * Check if category is for income operations
+     */
+    public boolean isIncome() {
+        return type == CategoryType.INCOME;
+    }
+
+    /**
+     * Check if category is for expense operations
+     */
+    public boolean isExpense() {
+        return type == CategoryType.OUTCOME;
+    }
+}// CategoryType.java
+package hse.hsebank.domains.enums;
+
+import lombok.Getter;
+
+/**
+ * Operation category type
+ */
+@Getter
+public enum CategoryType {
+    INCOME("Income"),
+    OUTCOME("Expense");
+
+    private final String displayName;
+
+    CategoryType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public static CategoryType fromString(String type) {
+        for (CategoryType categoryType : values()) {
+            if (categoryType.name().equalsIgnoreCase(type) ||
+                    categoryType.displayName.equalsIgnoreCase(type)) {
+                return categoryType;
+            }
+        }
+        throw new IllegalArgumentException("Unknown category type: " + type);
+    }
+}package hse.hsebank.domains;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import hse.hsebank.domains.enums.CategoryType;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * Financial operation (income or expense)
+ */
+public class Operation {
+    @Getter
+    private final String id;
+
+    @Getter @Setter
+    private String bankAccountId;
+
+    @Getter @Setter
+    private String categoryId;
+
+    @Getter
+    private CategoryType type;
+
+    @Getter @Setter
+    private BigDecimal amount;
+
+    @Getter
+    private final LocalDateTime date;
+
+    @Getter @Setter
+    private String description;
+
+    // Единственный конструктор с аннотациями Jackson
+    @JsonCreator
+    public Operation(@JsonProperty("id") String id,
+                     @JsonProperty("bankAccountId") String bankAccountId,
+                     @JsonProperty("categoryId") String categoryId,
+                     @JsonProperty("type") CategoryType type,
+                     @JsonProperty("amount") BigDecimal amount,
+                     @JsonProperty("date") LocalDateTime date,
+                     @JsonProperty("description") String description) {
+        validateInput(id, bankAccountId, categoryId, type, amount);
+
+        this.id = id;
+        this.bankAccountId = bankAccountId;
+        this.categoryId = categoryId;
+        this.type = type;
+        this.amount = amount;
+        this.date = date != null ? date : LocalDateTime.now();
+        this.description = description != null ? description.trim() : "";
+    }
+
+    public static Operation createNew(String bankAccountId, String categoryId, CategoryType type,
+                                      BigDecimal amount, String description) {
+        String shortId = hse.hsebank.utils.ShortUUID.generate();
+        return new Operation(shortId, bankAccountId, categoryId, type, amount, LocalDateTime.now(), description);
+    }
+
+    private void validateInput(String id, String bankAccountId, String categoryId,
+                               CategoryType type, BigDecimal amount) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Operation ID cannot be null");
+        }
+        if (bankAccountId == null || bankAccountId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Bank account ID cannot be null");
+        }
+        if (categoryId == null || categoryId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Category ID cannot be null");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("Operation type cannot be null");
+        }
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+    }
+
+    /**
+     * Set operation type with validation
+     */
+    public void setType(CategoryType type) {
+        if (type == null) {
+            throw new IllegalArgumentException("Operation type cannot be null");
+        }
+        this.type = type;
+    }
+
+    /**
+     * Check if operation is income
+     */
+    public boolean isIncome() {
+        return type == CategoryType.INCOME;
+    }
+
+    /**
+     * Check if operation is expense
+     */
+    public boolean isExpense() {
+        return type == CategoryType.OUTCOME;
+    }
+
+    /**
+     * Update operation date (for import/export scenarios)
+     */
+    public void setDate(LocalDateTime date) {
+        if (date == null) {
+            throw new IllegalArgumentException("Operation date cannot be null");
+        }
+        if (date.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Operation date cannot be in the future");
+        }
+    }
+
+    /**
+     * Get formatted date string
+     */
+    public String getFormattedDate() {
+        return date.toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Operation{id=%s, accountId=%s, categoryId=%s, type=%s, amount=%.2f, date=%s, description='%s'}",
+                id, bankAccountId, categoryId, type, amount, date, description);
+    }
+}// AnalyticsFacade.java
+package hse.hsebank.facade;
+
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Component
+public class AnalyticsFacade {
+    private final OperationFacade operationFacade;
+    private final CategoryFacade categoryFacade;
+
+    public AnalyticsFacade(OperationFacade operationFacade, CategoryFacade categoryFacade) {
+        this.operationFacade = operationFacade;
+        this.categoryFacade = categoryFacade;
+    }
+
+    /**
+     * Calculate income/expense difference for selected period
+     */
+    public BigDecimal calculateBalanceDifference(LocalDateTime start, LocalDateTime end) {
+        List<Operation> operations = operationFacade.getOperationsByDateRange(start, end);
+
+        BigDecimal totalIncome = operations.stream()
+                .filter(Operation::isIncome)
+                .map(Operation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalExpenses = operations.stream()
+                .filter(Operation::isExpense)
+                .map(Operation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return totalIncome.subtract(totalExpenses);
+    }
+
+    /**
+     * Calculate balance difference for today
+     */
+    public BigDecimal calculateTodayBalanceDifference() {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().atTime(23, 59, 59);
+        return calculateBalanceDifference(startOfDay, endOfDay);
+    }
+
+    /**
+     * Calculate balance difference for current month
+     */
+    public BigDecimal calculateCurrentMonthBalanceDifference() {
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endOfMonth = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth()).atTime(23, 59, 59);
+        return calculateBalanceDifference(startOfMonth, endOfMonth);
+    }
+
+    /**
+     * Group operations by category for specific type
+     */
+    public Map<String, BigDecimal> groupOperationsByCategory(CategoryType type) {
+        return operationFacade.getAllOperations().stream()
+                .filter(op -> op.getType() == type)
+                .collect(Collectors.groupingBy(
+                        op -> categoryFacade.getCategory(op.getCategoryId())
+                                .map(Category::getName)
+                                .orElse("Unknown"),
+                        Collectors.reducing(BigDecimal.ZERO, Operation::getAmount, BigDecimal::add)
+                ));
+    }
+
+    /**
+     * Group operations by category for specific period
+     */
+    public Map<String, BigDecimal> groupOperationsByCategory(CategoryType type, LocalDateTime start, LocalDateTime end) {
+        return operationFacade.getOperationsByDateRange(start, end).stream()
+                .filter(op -> op.getType() == type)
+                .collect(Collectors.groupingBy(
+                        op -> categoryFacade.getCategory(op.getCategoryId())
+                                .map(Category::getName)
+                                .orElse("Unknown"),
+                        Collectors.reducing(BigDecimal.ZERO, Operation::getAmount, BigDecimal::add)
+                ));
+    }
+
+    public Map<String, BigDecimal> getIncomeByCategory() {
+        return groupOperationsByCategory(CategoryType.INCOME);
+    }
+
+    public Map<String, BigDecimal> getExpensesByCategory() {
+        return groupOperationsByCategory(CategoryType.OUTCOME);
+    }
+
+    /**
+     * Get income by category for specific period
+     */
+    public Map<String, BigDecimal> getIncomeByCategory(LocalDateTime start, LocalDateTime end) {
+        return groupOperationsByCategory(CategoryType.INCOME, start, end);
+    }
+
+    /**
+     * Get expenses by category for specific period
+     */
+    public Map<String, BigDecimal> getExpensesByCategory(LocalDateTime start, LocalDateTime end) {
+        return groupOperationsByCategory(CategoryType.OUTCOME, start, end);
+    }
+
+    public BigDecimal getTotalIncome() {
+        return operationFacade.getAllOperations().stream()
+                .filter(Operation::isIncome)
+                .map(Operation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal getTotalExpenses() {
+        return operationFacade.getAllOperations().stream()
+                .filter(Operation::isExpense)
+                .map(Operation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Get total income for specific period
+     */
+    public BigDecimal getTotalIncome(LocalDateTime start, LocalDateTime end) {
+        return operationFacade.getOperationsByDateRange(start, end).stream()
+                .filter(Operation::isIncome)
+                .map(Operation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Get total expenses for specific period
+     */
+    public BigDecimal getTotalExpenses(LocalDateTime start, LocalDateTime end) {
+        return operationFacade.getOperationsByDateRange(start, end).stream()
+                .filter(Operation::isExpense)
+                .map(Operation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal getCurrentBalance(String accountId) {
+        return operationFacade.getOperationsByAccount(accountId).stream()
+                .map(op -> op.isIncome() ? op.getAmount() : op.getAmount().negate())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Get financial summary for period
+     */
+    public FinancialSummary getFinancialSummary(LocalDateTime start, LocalDateTime end) {
+        BigDecimal income = getTotalIncome(start, end);
+        BigDecimal expenses = getTotalExpenses(start, end);
+        BigDecimal balance = income.subtract(expenses);
+
+        return new FinancialSummary(income, expenses, balance);
+    }
+
+    /**
+     * Get top spending categories
+     */
+    public Map<String, BigDecimal> getTopSpendingCategories(int limit) {
+        return getExpensesByCategory().entrySet().stream()
+                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
+                .limit(limit)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
+     * Get top income categories
+     */
+    public Map<String, BigDecimal> getTopIncomeCategories(int limit) {
+        return getIncomeByCategory().entrySet().stream()
+                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
+                .limit(limit)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
+     * Financial summary data class
+     */
+    public static class FinancialSummary {
+        private final BigDecimal totalIncome;
+        private final BigDecimal totalExpenses;
+        private final BigDecimal netBalance;
+
+        public FinancialSummary(BigDecimal totalIncome, BigDecimal totalExpenses, BigDecimal netBalance) {
+            this.totalIncome = totalIncome;
+            this.totalExpenses = totalExpenses;
+            this.netBalance = netBalance;
+        }
+
+        public BigDecimal getTotalIncome() { return totalIncome; }
+        public BigDecimal getTotalExpenses() { return totalExpenses; }
+        public BigDecimal getNetBalance() { return netBalance; }
+    }
+}package hse.hsebank.facade;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.factories.DomainFactory;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.*;
+
+@Component
+public class BankAccountFacade {
+    private final Map<String, BankAccount> accounts = new HashMap<>();  // ← Теперь String ключ
+    private final DomainFactory domainFactory;
+
+    public BankAccountFacade(DomainFactory domainFactory) {
+        this.domainFactory = domainFactory;
+    }
+
+    public BankAccount createAccount(String name) {
+        BankAccount account = domainFactory.createBankAccount(name);
+        accounts.put(account.getId(), account);
+        return account;
+    }
+    public BankAccount createAccountWithId(String id, String name, BigDecimal balance) {
+        BankAccount account = new BankAccount(id, name, balance);
+        accounts.put(account.getId(), account);
+        return account;
+    }
+
+    public Optional<BankAccount> getAccount(String id) {  // ← Теперь String параметр
+        return Optional.ofNullable(accounts.get(id));
+    }
+
+    public List<BankAccount> getAllAccounts() {
+        return new ArrayList<>(accounts.values());
+    }
+
+    public boolean updateAccount(String id, String newName) {  // ← Теперь String параметр
+        BankAccount account = accounts.get(id);
+        if (account != null) {
+            account.setName(newName);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean deleteAccount(String id) {  // ← Теперь String параметр
+        return accounts.remove(id) != null;
+    }
+
+    public void processOperation(BankAccount account, hse.hsebank.domains.Operation operation) {
+        account.processOperation(operation);
+    }
+
+
+}package hse.hsebank.facade;
+
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.factories.DomainFactory;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+
+@Component
+public class CategoryFacade {
+    private final Map<String, Category> categories = new HashMap<>();
+    private final DomainFactory domainFactory;
+
+    public CategoryFacade(DomainFactory domainFactory) {
+        this.domainFactory = domainFactory;
+    }
+
+    public Category createCategory(CategoryType type, String name) {
+        Category category = domainFactory.createCategory(type, name);
+        categories.put(category.getId(), category);
+        return category;
+    }
+
+    public Category createCategoryWithId(String id, CategoryType type, String name) {
+        Category category = new Category(id, type, name);
+        categories.put(category.getId(), category);
+        return category;
+    }
+
+    public Optional<Category> getCategory(String id) {
+        return Optional.ofNullable(categories.get(id));
+    }
+
+    public List<Category> getAllCategories() {
+        return new ArrayList<>(categories.values());
+    }
+
+    public List<Category> getCategoriesByType(CategoryType type) {
+        return categories.values().stream()
+                .filter(category -> category.getType() == type)
+                .toList();
+    }
+
+    public boolean updateCategory(String id, String newName, CategoryType newType) {
+        Category category = categories.get(id);
+        if (category != null) {
+            category.setName(newName);
+            category.setType(newType);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean deleteCategory(String id) {
+        return categories.remove(id) != null;
+    }
+}package hse.hsebank.facade;
+
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.factories.DomainFactory;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+
+@Component
+public class OperationFacade {
+    private final Map<String, Operation> operations = new HashMap<>();
+    private final DomainFactory domainFactory;
+    private final BankAccountFacade bankAccountFacade;
+    private final CategoryFacade categoryFacade;
+
+    public OperationFacade(DomainFactory domainFactory,
+                           BankAccountFacade bankAccountFacade,
+                           CategoryFacade categoryFacade) {
+        this.domainFactory = domainFactory;
+        this.bankAccountFacade = bankAccountFacade;
+        this.categoryFacade = categoryFacade;
+    }
+
+    public Operation createOperation(String bankAccountId, String categoryId,
+                                     CategoryType type, BigDecimal amount, String description) {
+        var accountOpt = bankAccountFacade.getAccount(bankAccountId);
+        if (accountOpt.isEmpty()) {
+            throw new IllegalArgumentException("Bank account not found");
+        }
+
+        var categoryOpt = categoryFacade.getCategory(categoryId);
+        if (categoryOpt.isEmpty()) {
+            throw new IllegalArgumentException("Category not found");
+        }
+
+        if (type == CategoryType.OUTCOME) {
+            var account = accountOpt.get();
+            if (account.getBalance().compareTo(amount) < 0) {
+                throw new IllegalArgumentException(
+                        String.format("Insufficient funds. Current balance: %.2f, required: %.2f",
+                                account.getBalance(), amount)
+                );
+            }
+        }
+
+        var category = categoryOpt.get();
+        if (category.getType() != type) {
+            throw new IllegalArgumentException(
+                    String.format("Category type mismatch. Category '%s' is for %s, but operation is %s",
+                            category.getName(), category.getType().getDisplayName(), type.getDisplayName())
+            );
+        }
+
+        Operation operation = domainFactory.createOperation(bankAccountId, categoryId, type, amount, description);
+        operations.put(operation.getId(), operation);
+
+        bankAccountFacade.getAccount(bankAccountId).ifPresent(
+                account -> account.processOperation(operation)
+        );
+
+        return operation;
+    }
+
+    public Operation createOperationWithId(String id, String bankAccountId, String categoryId,
+                                           CategoryType type, BigDecimal amount, String description, LocalDateTime date) {
+        var accountOpt = bankAccountFacade.getAccount(bankAccountId);
+        if (accountOpt.isEmpty()) {
+            throw new IllegalArgumentException("Bank account not found: " + bankAccountId);
+        }
+
+        var categoryOpt = categoryFacade.getCategory(categoryId);
+        if (categoryOpt.isEmpty()) {
+            throw new IllegalArgumentException("Category not found: " + categoryId);
+        }
+
+        if (type == CategoryType.OUTCOME) {
+            var account = accountOpt.get();
+            if (account.getBalance().compareTo(amount) < 0) {
+                throw new IllegalArgumentException(
+                        String.format("Insufficient funds. Current balance: %.2f, required: %.2f",
+                                account.getBalance(), amount)
+                );
+            }
+        }
+
+        var category = categoryOpt.get();
+        if (category.getType() != type) {
+            throw new IllegalArgumentException(
+                    String.format("Category type mismatch. Category '%s' is for %s, but operation is %s",
+                            category.getName(), category.getType().getDisplayName(), type.getDisplayName())
+            );
+        }
+
+        Operation operation = new Operation(id, bankAccountId, categoryId, type, amount, date, description);
+        operations.put(operation.getId(), operation);
+
+        bankAccountFacade.getAccount(bankAccountId).ifPresent(
+                account -> account.processOperation(operation)
+        );
+
+        return operation;
+    }
+
+    public Optional<Operation> getOperation(String id) {
+        return Optional.ofNullable(operations.get(id));
+    }
+
+    public List<Operation> getAllOperations() {
+        return new ArrayList<>(operations.values());
+    }
+
+    public List<Operation> getOperationsByAccount(String accountId) {
+        return operations.values().stream()
+                .filter(op -> op.getBankAccountId().equals(accountId))
+                .toList();
+    }
+
+    public List<Operation> getOperationsByCategory(String categoryId) {
+        return operations.values().stream()
+                .filter(op -> op.getCategoryId().equals(categoryId))
+                .toList();
+    }
+
+    public List<Operation> getOperationsByDateRange(LocalDateTime start, LocalDateTime end) {
+        return operations.values().stream()
+                .filter(op -> !op.getDate().isBefore(start) && !op.getDate().isAfter(end))
+                .toList();
+    }
+
+    public boolean deleteOperation(String id) {
+        return operations.remove(id) != null;
+    }
+}// DomainFactory.java (обновленный)
+package hse.hsebank.factories;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.utils.ShortUUID;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+
+@Component
+public interface DomainFactory {
+    BankAccount createBankAccount(String name);
+    Category createCategory(CategoryType type, String name);
+    Operation createOperation(String bankAccountId, String categoryId, CategoryType type,
+                              BigDecimal amount, String description);
+}package hse.hsebank.factories;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.utils.ShortUUID;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+
+@Component
+public class DomainFactoryImpl implements DomainFactory {
+
+    @Override
+    public BankAccount createBankAccount(String name) {
+        return BankAccount.createNew(name);
+    }
+
+    @Override
+    public Category createCategory(CategoryType type, String name) {
+        String shortId = ShortUUID.generate();
+        return new Category(shortId, type, name);
+    }
+
+    @Override
+    public Operation createOperation(String bankAccountId, String categoryId, CategoryType type,
+                                     BigDecimal amount, String description) {
+        return Operation.createNew(bankAccountId, categoryId, type, amount, description);
+    }
+}package hse.hsebank;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class HseBankApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(HseBankApplication.class, args);
+    }
+}package hse.hsebank.proxy;
+
+import hse.hsebank.domains.BankAccount;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface BankRepository {
+    void save(BankAccount account);
+    Optional<BankAccount> findById(String id);
+    List<BankAccount> findAll();
+    void delete(String id);
+}package hse.hsebank.proxy;
+
+import hse.hsebank.domains.BankAccount;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+
+@Component
+public class BankRepositoryImpl implements BankRepository {
+    private final Map<String, BankAccount> database = new HashMap<>();
+
+    @Override
+    public void save(BankAccount account) {
+        System.out.println("Saving to database: " + account.getId());
+        database.put(account.getId(), account);
+    }
+
+    @Override
+    public Optional<BankAccount> findById(String id) {
+        System.out.println("Reading from database: " + id);
+        return Optional.ofNullable(database.get(id));
+    }
+
+    @Override
+    public List<BankAccount> findAll() {
+        System.out.println("Reading all accounts from database");
+        return new ArrayList<>(database.values());
+    }
+
+    @Override
+    public void delete(String id) {
+        System.out.println("Deleting from database: " + id);
+        database.remove(id);
+    }
+}package hse.hsebank.proxy;
+
+import hse.hsebank.domains.BankAccount;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+/**
+ * Proxy with in-memory cache
+ */
+@Component
+public class BankRepositoryProxy implements BankRepository {
+    private final BankRepository realRepository;
+    private final ConcurrentMap<String, BankAccount> cache = new ConcurrentHashMap<>();
+
+    public BankRepositoryProxy(BankRepositoryImpl realRepository) {
+        this.realRepository = realRepository;
+    }
+
+    @Override
+    public void save(BankAccount account) {
+        realRepository.save(account);
+        cache.put(account.getId(), account);
+    }
+
+    @Override
+    public Optional<BankAccount> findById(String id) {
+        BankAccount cached = cache.get(id);
+        if (cached != null) {
+            System.out.println("Returning from cache: " + id);
+            return Optional.of(cached);
+        }
+
+        Optional<BankAccount> account = realRepository.findById(id);
+        account.ifPresent(acc -> cache.put(id, acc));
+        return account;
+    }
+
+    @Override
+    public List<BankAccount> findAll() {
+        return realRepository.findAll();
+    }
+
+    @Override
+    public void delete(String id) {
+        realRepository.delete(id);
+        cache.remove(id);
+    }
+
+    public void clearCache() {
+        cache.clear();
+    }
+}package hse.hsebank.services;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.facade.BankAccountFacade;
+import hse.hsebank.facade.OperationFacade;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+@Component
+public class BalanceRecalculationService {
+    private final BankAccountFacade bankAccountFacade;
+    private final OperationFacade operationFacade;
+
+    public BalanceRecalculationService(BankAccountFacade bankAccountFacade, OperationFacade operationFacade) {
+        this.bankAccountFacade = bankAccountFacade;
+        this.operationFacade = operationFacade;
+    }
+
+    public void recalculateBalance(String  accountId) {
+        BankAccount account = bankAccountFacade.getAccount(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        BigDecimal newBalance = operationFacade.getOperationsByAccount(accountId).stream()
+                .map(op -> op.isIncome() ? op.getAmount() : op.getAmount().negate())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        account.recalculateBalance(newBalance);
+        System.out.println("Balance recalculated for account " + accountId + ": " + newBalance);
+    }
+
+    public void recalculateAllBalances() {
+        bankAccountFacade.getAllAccounts().forEach(account ->
+                recalculateBalance(account.getId())
+        );
+    }
+}package hse.hsebank.services;
+
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+@Component
+public class StatisticsService {
+    private final AtomicLong totalOperations = new AtomicLong(0);
+    private final AtomicLong totalProcessingTime = new AtomicLong(0);
+
+    public void recordOperation(long processingTime) {
+        totalOperations.incrementAndGet();
+        totalProcessingTime.addAndGet(processingTime);
+    }
+
+    public double getAverageProcessingTime() {
+        long operations = totalOperations.get();
+        return operations > 0 ? (double) totalProcessingTime.get() / operations : 0.0;
+    }
+
+    public long getTotalOperations() {
+        return totalOperations.get();
+    }
+
+    public void reset() {
+        totalOperations.set(0);
+        totalProcessingTime.set(0);
+    }
+}package hse.hsebank.template;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.facade.BankAccountFacade;
+import hse.hsebank.facade.CategoryFacade;
+import hse.hsebank.facade.OperationFacade;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Component
+public class CsvDataImporter extends DataImporter {;
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
+    public CsvDataImporter(BankAccountFacade bankAccountFacade,
+                           CategoryFacade categoryFacade,
+                           OperationFacade operationFacade) {
+        super(bankAccountFacade, categoryFacade, operationFacade);
+    }
+
+    @Override
+    protected String readFile(String filePath) {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading CSV file: " + e.getMessage(), e);
+        }
+        return content.toString();
+    }
+
+    @Override
+    protected List<BankAccount> parseAccounts(String content) {
+        List<BankAccount> accounts = new ArrayList<>();
+        String[] lines = content.split("\n");
+
+        for (String line : lines) {
+            if (line.trim().isEmpty() || line.startsWith("id,name,balance") || line.startsWith("=== ACCOUNTS ===")) {
+                continue;
+            }
+
+            try {
+                String[] parts = parseCsvLine(line);
+                if (parts.length >= 3) {
+                    String id = parts[0].trim();
+                    String name = parts[1].trim();
+                    BigDecimal balance = new BigDecimal(parts[2].trim());
+
+                    BankAccount account = new BankAccount(id, name, balance);
+                    accounts.add(account);
+                }
+            } catch (Exception e) {
+                System.err.println("Error parsing account line: " + line + " - " + e.getMessage());
+            }
+        }
+
+        return accounts;
+    }
+
+    @Override
+    protected List<Category> parseCategories(String content) {
+        List<Category> categories = new ArrayList<>();
+        String[] lines = content.split("\n");
+
+        for (String line : lines) {
+            if (line.trim().isEmpty() || line.startsWith("id,type,name") || line.startsWith("=== CATEGORIES ===")) {
+                continue;
+            }
+
+            try {
+                String[] parts = parseCsvLine(line);
+                if (parts.length >= 3) {
+                    String id = parts[0].trim();
+                    CategoryType type = CategoryType.valueOf(parts[1].trim().toUpperCase());
+                    String name = parts[2].trim();
+
+                    Category category = new Category(id, type, name);
+                    categories.add(category);
+                }
+            } catch (Exception e) {
+                System.err.println("Error parsing category line: " + line + " - " + e.getMessage());
+            }
+        }
+
+        return categories;
+    }
+
+    @Override
+    protected List<Operation> parseOperations(String content) {
+        List<Operation> operations = new ArrayList<>();
+        String[] lines = content.split("\n");
+
+        for (String line : lines) {
+            if (line.trim().isEmpty() || line.startsWith("id,bankAccountId,categoryId,type,amount,date,description") || line.startsWith("=== OPERATIONS ===")) {
+                continue;
+            }
+
+            try {
+                String[] parts = parseCsvLine(line);
+                if (parts.length >= 7) {
+                    String id = parts[0].trim();
+                    String bankAccountId = parts[1].trim();
+                    String categoryId = parts[2].trim();
+                    CategoryType type = CategoryType.valueOf(parts[3].trim().toUpperCase());
+                    BigDecimal amount = new BigDecimal(parts[4].trim());
+                    LocalDateTime date = LocalDateTime.parse(parts[5].trim(), DATE_FORMATTER);
+                    String description = parts[6].trim();
+
+                    Operation operation = new Operation(id, bankAccountId, categoryId, type, amount, date, description);
+                    operations.add(operation);
+                }
+            } catch (Exception e) {
+                System.err.println("Error parsing operation line: " + line + " - " + e.getMessage());
+            }
+        }
+
+        return operations;
+    }
+
+    @Override
+    public String getSupportedFormat() {
+        return "CSV";
+    }
+
+    /**
+     * Parse CSV line considering quoted fields and commas within quotes
+     */
+    private String[] parseCsvLine(String line) {
+        List<String> result = new ArrayList<>();
+        boolean inQuotes = false;
+        StringBuilder field = new StringBuilder();
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ',' && !inQuotes) {
+                result.add(field.toString());
+                field.setLength(0);
+            } else {
+                field.append(c);
+            }
+        }
+
+        result.add(field.toString());
+        return result.toArray(new String[0]);
+    }
+}package hse.hsebank.template;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.facade.BankAccountFacade;
+import hse.hsebank.facade.CategoryFacade;
+import hse.hsebank.facade.OperationFacade;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Template method for data import
+ */
+public abstract class DataImporter {
+    protected final BankAccountFacade bankAccountFacade;
+    protected final CategoryFacade categoryFacade;
+    protected final OperationFacade operationFacade;
+
+    public DataImporter(BankAccountFacade bankAccountFacade,
+                        CategoryFacade categoryFacade,
+                        OperationFacade operationFacade) {
+        this.bankAccountFacade = bankAccountFacade;
+        this.categoryFacade = categoryFacade;
+        this.operationFacade = operationFacade;
+    }
+
+    public final ImportResult importData(String filePath) {
+        try {
+            String content = readFile(filePath);
+            List<BankAccount> accounts = parseAccounts(content);
+            List<Category> categories = parseCategories(content);
+            List<Operation> operations = parseOperations(content);
+            saveData(accounts, categories, operations);
+            postImport();
+
+            System.out.printf("Import completed: %d accounts, %d categories, %d operations%n",
+                    accounts.size(), categories.size(), operations.size());
+
+            return new ImportResult(accounts.size(), categories.size(), operations.size(),
+                    true, "Import completed successfully");
+        } catch (Exception e) {
+            System.err.println("Import failed: " + e.getMessage());
+            return new ImportResult(0, 0, 0, false, "Import failed: " + e.getMessage());
+        }
+    }
+
+    protected abstract String readFile(String filePath);
+    protected abstract List<BankAccount> parseAccounts(String content);
+    protected abstract List<Category> parseCategories(String content);
+    protected abstract List<Operation> parseOperations(String content);
+
+    /**
+     * Common save logic for all importers
+     */
+    protected void saveData(List<BankAccount> accounts, List<Category> categories, List<Operation> operations) {
+        for (BankAccount account : accounts) {
+            try {
+                if (bankAccountFacade.getAccount(account.getId()).isEmpty()) {
+                    BankAccount newAccount = bankAccountFacade.createAccountWithId(
+                            account.getId(), account.getName(), account.getBalance()
+                    );
+                    System.out.println("Created account: " + account.getId() + " - " + account.getName());
+                } else {
+                    System.out.println("Account already exists: " + account.getId());
+                }
+            } catch (Exception e) {
+                System.err.println("Error saving account " + account.getId() + ": " + e.getMessage());
+            }
+        }
+
+        for (Category category : categories) {
+            try {
+                if (categoryFacade.getCategory(category.getId()).isEmpty()) {
+                    Category newCategory = categoryFacade.createCategoryWithId(
+                            category.getId(), category.getType(), category.getName()
+                    );
+                    System.out.println("Created category: " + category.getId() + " - " + category.getName());
+                } else {
+                    System.out.println("Category already exists: " + category.getId());
+                }
+            } catch (Exception e) {
+                System.err.println("Error saving category " + category.getId() + ": " + e.getMessage());
+            }
+        }
+
+        createMissingAccounts(accounts, operations);
+
+        createMissingCategories(categories, operations);
+
+        saveOperations(operations);
+    }
+
+    private void createMissingAccounts(List<BankAccount> importedAccounts, List<Operation> operations) {
+        Set<String> importedAccountIds = importedAccounts.stream()
+                .map(BankAccount::getId)
+                .collect(Collectors.toSet());
+
+        Set<String> referencedAccountIds = operations.stream()
+                .map(Operation::getBankAccountId)
+                .collect(Collectors.toSet());
+
+        for (String accountId : referencedAccountIds) {
+            if (!importedAccountIds.contains(accountId) && bankAccountFacade.getAccount(accountId).isEmpty()) {
+                try {
+                    BankAccount newAccount = bankAccountFacade.createAccountWithId(
+                            accountId, "Imported Account " + accountId, BigDecimal.ZERO
+                    );
+                    System.out.println("Created missing account: " + accountId);
+                } catch (Exception e) {
+                    System.err.println("Error creating missing account " + accountId + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void createMissingCategories(List<Category> importedCategories, List<Operation> operations) {
+        Set<String> importedCategoryIds = importedCategories.stream()
+                .map(Category::getId)
+                .collect(Collectors.toSet());
+
+        Set<String> referencedCategoryIds = operations.stream()
+                .map(Operation::getCategoryId)
+                .collect(Collectors.toSet());
+
+        for (String categoryId : referencedCategoryIds) {
+            if (!importedCategoryIds.contains(categoryId) && categoryFacade.getCategory(categoryId).isEmpty()) {
+                try {
+                    Category newCategory = categoryFacade.createCategoryWithId(
+                            categoryId, CategoryType.OUTCOME, "Imported Category " + categoryId
+                    );
+                    System.out.println("Created missing category: " + categoryId);
+                } catch (Exception e) {
+                    System.err.println("Error creating missing category " + categoryId + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void saveOperations(List<Operation> operations) {
+        int successfulOperations = 0;
+        int skippedOperations = 0;
+
+        for (Operation operation : operations) {
+            try {
+                if (operationFacade.getOperation(operation.getId()).isEmpty()) {
+                    Operation newOperation = operationFacade.createOperationWithId(
+                            operation.getId(),
+                            operation.getBankAccountId(),
+                            operation.getCategoryId(),
+                            operation.getType(),
+                            operation.getAmount(),
+                            operation.getDescription(),
+                            operation.getDate()
+                    );
+                    successfulOperations++;
+                    System.out.println("Created operation: " + operation.getId());
+                } else {
+                    System.out.println("Operation already exists: " + operation.getId());
+                    skippedOperations++;
+                }
+            } catch (Exception e) {
+                System.err.println("Error creating operation " + operation.getId() + ": " + e.getMessage());
+                skippedOperations++;
+            }
+        }
+
+        System.out.println("Operations: " + successfulOperations + " created, " + skippedOperations + " skipped");
+    }
+
+    protected void postImport() {
+        System.out.println("Import completed successfully");
+    }
+
+    public abstract String getSupportedFormat();
+
+    public static class ImportResult {
+        private final int accountsImported;
+        private final int categoriesImported;
+        private final int operationsImported;
+        private final boolean success;
+        private final String message;
+
+        public ImportResult(int accountsImported, int categoriesImported, int operationsImported, boolean success, String message) {
+            this.accountsImported = accountsImported;
+            this.categoriesImported = categoriesImported;
+            this.operationsImported = operationsImported;
+            this.success = success;
+            this.message = message;
+        }
+
+        // Getters
+        public int getAccountsImported() { return accountsImported; }
+        public int getCategoriesImported() { return categoriesImported; }
+        public int getOperationsImported() { return operationsImported; }
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+    }
+}package hse.hsebank.template;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.facade.BankAccountFacade;
+import hse.hsebank.facade.CategoryFacade;
+import hse.hsebank.facade.OperationFacade;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Component
+public class JsonDataImporter extends DataImporter {
+    private final ObjectMapper objectMapper;
+    public JsonDataImporter(BankAccountFacade bankAccountFacade, CategoryFacade categoryFacade,
+                            OperationFacade operationFacade) {
+        super(bankAccountFacade, categoryFacade, operationFacade);
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+    }
+
+    @Override
+    protected String readFile(String filePath) {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading JSON file: " + e.getMessage(), e);
+        }
+        return content.toString();
+    }
+
+    @Override
+    protected List<BankAccount> parseAccounts(String content) {
+        try {
+            Map<String, Object> data = objectMapper.readValue(content, new TypeReference<Map<String, Object>>() {});
+            Object accountsObj = data.get("accounts");
+
+            if (accountsObj instanceof List) {
+                List<Map<String, Object>> accountsData = (List<Map<String, Object>>) accountsObj;
+                List<BankAccount> accounts = new ArrayList<>();
+
+                for (Map<String, Object> accountData : accountsData) {
+                    try {
+                        String id = (String) accountData.get("id");
+                        String name = (String) accountData.get("name");
+                        Object balanceObj = accountData.get("balance");
+
+                        BigDecimal balance;
+                        if (balanceObj instanceof Number) {
+                            balance = new BigDecimal(balanceObj.toString());
+                        } else if (balanceObj instanceof String) {
+                            balance = new BigDecimal((String) balanceObj);
+                        } else {
+                            balance = BigDecimal.ZERO;
+                        }
+
+                        BankAccount account = new BankAccount(id, name, balance);
+                        accounts.add(account);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing account data: " + e.getMessage());
+                    }
+                }
+                return accounts;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing JSON accounts: " + e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    protected List<Category> parseCategories(String content) {
+        try {
+            Map<String, Object> data = objectMapper.readValue(content, new TypeReference<Map<String, Object>>() {});
+            Object categoriesObj = data.get("categories");
+
+            if (categoriesObj instanceof List) {
+                List<Map<String, Object>> categoriesData = (List<Map<String, Object>>) categoriesObj;
+                List<Category> categories = new ArrayList<>();
+
+                for (Map<String, Object> categoryData : categoriesData) {
+                    try {
+                        String id = (String) categoryData.get("id");
+                        String typeStr = (String) categoryData.get("type");
+                        String name = (String) categoryData.get("name");
+
+                        CategoryType type = CategoryType.valueOf(typeStr);
+                        categories.add(new Category(id, type, name));
+                    } catch (Exception e) {
+                        System.err.println("Error parsing category data: " + e.getMessage());
+                    }
+                }
+                return categories;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing JSON categories: " + e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    protected List<Operation> parseOperations(String content) {
+        try {
+            Map<String, Object> data = objectMapper.readValue(content, new TypeReference<Map<String, Object>>() {});
+            Object operationsObj = data.get("operations");
+
+            if (operationsObj instanceof List) {
+                List<Map<String, Object>> operationsData = (List<Map<String, Object>>) operationsObj;
+                List<Operation> operations = new ArrayList<>();
+
+                for (Map<String, Object> operationData : operationsData) {
+                    try {
+                        String id = (String) operationData.get("id");
+                        String bankAccountId = (String) operationData.get("bankAccountId");
+                        String categoryId = (String) operationData.get("categoryId");
+                        String typeStr = (String) operationData.get("type");
+                        Object amountObj = operationData.get("amount");
+                        String dateStr = (String) operationData.get("date");
+                        String description = (String) operationData.get("description");
+
+                        CategoryType type = CategoryType.valueOf(typeStr);
+                        BigDecimal amount;
+                        if (amountObj instanceof Number) {
+                            amount = new BigDecimal(amountObj.toString());
+                        } else {
+                            amount = new BigDecimal((String) amountObj);
+                        }
+
+                        LocalDateTime date = LocalDateTime.parse(dateStr);
+
+                        Operation operation = new Operation(id, bankAccountId, categoryId, type, amount, date, description);
+                        operations.add(operation);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing operation data: " + e.getMessage());
+                    }
+                }
+                return operations;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing JSON operations: " + e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+
+
+    @Override
+    public String getSupportedFormat() {
+        return "JSON";
+    }
+}package hse.hsebank.template;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import hse.hsebank.domains.enums.CategoryType;
+import hse.hsebank.facade.BankAccountFacade;
+import hse.hsebank.facade.CategoryFacade;
+import hse.hsebank.facade.OperationFacade;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Component
+public class YamlDataImporter extends DataImporter {
+    private final ObjectMapper yamlMapper;
+
+    public YamlDataImporter(BankAccountFacade bankAccountFacade,
+                            CategoryFacade categoryFacade,
+                            OperationFacade operationFacade) {
+        super(bankAccountFacade, categoryFacade, operationFacade);
+        this.yamlMapper = new ObjectMapper(new YAMLFactory());
+        this.yamlMapper.registerModule(new JavaTimeModule());
+    }
+
+    @Override
+    protected String readFile(String filePath) {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading YAML file: " + e.getMessage(), e);
+        }
+        return content.toString();
+    }
+
+    @Override
+    protected List<BankAccount> parseAccounts(String content) {
+        try {
+            Map<String, Object> data = yamlMapper.readValue(content, new TypeReference<Map<String, Object>>() {});
+            Object accountsObj = data.get("accounts");
+
+            if (accountsObj instanceof List) {
+                List<Map<String, Object>> accountsData = (List<Map<String, Object>>) accountsObj;
+                List<BankAccount> accounts = new ArrayList<>();
+
+                for (Map<String, Object> accountData : accountsData) {
+                    try {
+                        String id = (String) accountData.get("id");
+                        String name = (String) accountData.get("name");
+                        Object balanceObj = accountData.get("balance");
+
+                        BigDecimal balance;
+                        if (balanceObj instanceof Number) {
+                            balance = new BigDecimal(balanceObj.toString());
+                        } else if (balanceObj instanceof String) {
+                            balance = new BigDecimal((String) balanceObj);
+                        } else {
+                            balance = BigDecimal.ZERO;
+                        }
+
+                        BankAccount account = new BankAccount(id, name, balance);
+                        accounts.add(account);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing account data: " + e.getMessage());
+                    }
+                }
+                return accounts;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing YAML accounts: " + e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    protected List<Category> parseCategories(String content) {
+        try {
+            Map<String, Object> data = yamlMapper.readValue(content, new TypeReference<Map<String, Object>>() {});
+            Object categoriesObj = data.get("categories");
+
+            if (categoriesObj instanceof List) {
+                List<Map<String, Object>> categoriesData = (List<Map<String, Object>>) categoriesObj;
+                List<Category> categories = new ArrayList<>();
+
+                for (Map<String, Object> categoryData : categoriesData) {
+                    try {
+                        String id = (String) categoryData.get("id");
+                        String typeStr = (String) categoryData.get("type");
+                        String name = (String) categoryData.get("name");
+
+                        CategoryType type = CategoryType.valueOf(typeStr);
+                        categories.add(new Category(id, type, name));
+                    } catch (Exception e) {
+                        System.err.println("Error parsing category data: " + e.getMessage());
+                    }
+                }
+                return categories;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing YAML categories: " + e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    protected List<Operation> parseOperations(String content) {
+        try {
+            Map<String, Object> data = yamlMapper.readValue(content, new TypeReference<Map<String, Object>>() {});
+            Object operationsObj = data.get("operations");
+
+            if (operationsObj instanceof List) {
+                List<Map<String, Object>> operationsData = (List<Map<String, Object>>) operationsObj;
+                List<Operation> operations = new ArrayList<>();
+
+                for (Map<String, Object> operationData : operationsData) {
+                    try {
+                        String id = (String) operationData.get("id");
+                        String bankAccountId = (String) operationData.get("bankAccountId");
+                        String categoryId = (String) operationData.get("categoryId");
+                        String typeStr = (String) operationData.get("type");
+                        Object amountObj = operationData.get("amount");
+                        String dateStr = (String) operationData.get("date");
+                        String description = (String) operationData.get("description");
+
+                        CategoryType type = CategoryType.valueOf(typeStr);
+                        BigDecimal amount;
+                        if (amountObj instanceof Number) {
+                            amount = new BigDecimal(amountObj.toString());
+                        } else {
+                            amount = new BigDecimal((String) amountObj);
+                        }
+
+                        LocalDateTime date = LocalDateTime.parse(dateStr);
+                        Operation operation = new Operation(id, bankAccountId, categoryId, type, amount, date, description);
+                        operations.add(operation);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing operation data: " + e.getMessage());
+                    }
+                }
+                return operations;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing YAML operations: " + e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+
+    @Override
+    public String getSupportedFormat() {
+        return "YAML";
+    }
+}// InputProvider.java
+package hse.hsebank.utils;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * Интерфейс для поставщика ввода данных.
+ */
+@Component
+public interface InputProvider {
+    int nextInt();
+    double nextDouble();
+    boolean nextBoolean();
+    String nextLine();
+    long nextLong();
+}package hse.hsebank.utils;
+
+import hse.hsebank.domains.enums.CategoryType;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.InputMismatchException;
+
+/**
+ * Input data validator
+ */
+@Component
+public class InputValidator {
+    private final InputProvider inputProvider;
+
+    public InputValidator(InputProvider inputProvider) {
+        this.inputProvider = inputProvider;
+    }
+
+    public int getIntInput(String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                return inputProvider.nextInt();
+            } catch (InputMismatchException e) {
+                System.out.println("Error: please enter an integer.");
+            } finally {
+                inputProvider.nextLine();
+            }
+        }
+    }
+
+    public BigDecimal getBigDecimalInput(String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                double value = inputProvider.nextDouble();
+                if (value > 0) {
+                    return BigDecimal.valueOf(value);
+                } else {
+                    System.out.println("Error: amount must be positive.");
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Error: please enter a number.");
+            } finally {
+                inputProvider.nextLine();
+            }
+        }
+    }
+
+    public String getStringInput(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = inputProvider.nextLine().trim();
+            if (!input.isEmpty()) {
+                return input;
+            } else {
+                System.out.println("Error: input cannot be empty.");
+            }
+        }
+    }
+
+    public String getIdInput(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = inputProvider.nextLine().trim();
+            if (!input.isEmpty()) {
+                if (input.length() == 8 && ShortUUID.isValidShortId(input)) {
+                    return input;
+                } else {
+                    System.out.println("Error: ID must be exactly 8 hexadecimal characters (0-9, a-f)");
+                }
+            } else {
+                System.out.println("Error: ID cannot be empty.");
+            }
+        }
+    }
+
+    public boolean getYesNoInput(String prompt) {
+        while (true) {
+            System.out.print(prompt + " (y/n): ");
+            String input = inputProvider.nextLine().trim().toLowerCase();
+            if (input.equals("y") || input.equals("yes")) {
+                return true;
+            } else if (input.equals("n") || input.equals("no")) {
+                return false;
+            } else {
+                System.out.println("Error: please enter 'y' or 'n'.");
+            }
+        }
+    }
+
+    public CategoryType getCategoryTypeInput(String prompt) {
+        while (true) {
+            System.out.print(prompt + " (INCOME/OUTCOME): ");
+            String input = inputProvider.nextLine().trim().toUpperCase();
+            try {
+                return CategoryType.valueOf(input);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: please enter 'INCOME' or 'OUTCOME'.");
+            }
+        }
+    }
+}package hse.hsebank.utils;
+
+import org.springframework.stereotype.Component;
+
+import java.util.Scanner;
+
+/**
+ * Scanner-based input provider implementation
+ */
+@Component
+public class ScannerInputProvider implements InputProvider {
+    private final Scanner scanner;
+
+    public ScannerInputProvider() {
+        this.scanner = new Scanner(System.in);
+    }
+
+    @Override
+    public int nextInt() {
+        return scanner.nextInt();
+    }
+
+    @Override
+    public double nextDouble() {
+        return scanner.nextDouble();
+    }
+
+    @Override
+    public boolean nextBoolean() {
+        return scanner.nextBoolean();
+    }
+
+    @Override
+    public String nextLine() {
+        return scanner.nextLine();
+    }
+
+    @Override
+    public long nextLong() {
+        return scanner.nextLong();
+    }
+}package hse.hsebank.utils;
+
+import lombok.Getter;
+
+import java.util.UUID;
+
+/**
+ * Utility for generating and working with short UUIDs (8 characters)
+ */
+public class ShortUUID {
+
+    /**
+     * Generate a short UUID (8 characters)
+     */
+    public static String generate() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    /**
+     * Generate a full UUID and return its short version
+     */
+    public static String generateShortFromUUID() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    /**
+     * Convert existing UUID to short version
+     */
+    public static String toShort(UUID uuid) {
+        return uuid.toString().substring(0, 8);
+    }
+
+    /**
+     * Validate if string is a valid short ID (8 hex characters)
+     */
+    public static boolean isValidShortId(String id) {
+        return id != null && id.length() == 8 && id.matches("[a-fA-F0-9]{8}");
+    }
+
+    /**
+     * Generate both full UUID and short ID
+     */
+    public static UUIDWithShort generateFullAndShort() {
+        UUID fullUUID = UUID.randomUUID();
+        String shortId = toShort(fullUUID);
+        return new UUIDWithShort(fullUUID, shortId);
+    }
+
+    /**
+     * Container for full UUID and short ID
+     */
+    @Getter
+    public static class UUIDWithShort {
+        private final UUID fullUUID;
+        private final String shortId;
+
+        public UUIDWithShort(UUID fullUUID, String shortId) {
+            this.fullUUID = fullUUID;
+            this.shortId = shortId;
+        }
+
+    }
+}package hse.hsebank.visitor;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+
+@Component
+public class CsvExportVisitor implements DataExportVisitor {
+
+    @Override
+    public String exportAccounts(List<BankAccount> accounts) {
+        StringBuilder csv = new StringBuilder();
+        csv.append("id,name,balance\n");
+
+        for (BankAccount account : accounts) {
+            csv.append(String.format("%s,%s,%.2f\n",
+                    account.getId(),
+                    escapeCsv(account.getName()),
+                    account.getBalance()));
+        }
+
+        return csv.toString();
+    }
+
+    @Override
+    public String exportCategories(List<Category> categories) {
+        StringBuilder csv = new StringBuilder();
+        csv.append("id,type,name\n");
+
+        for (Category category : categories) {
+            csv.append(String.format("%s,%s,%s\n",
+                    category.getId(),
+                    category.getType().name(),
+                    escapeCsv(category.getName())));
+        }
+
+        return csv.toString();
+    }
+
+    @Override
+    public String exportOperations(List<Operation> operations) {
+        StringBuilder csv = new StringBuilder();
+        csv.append("id,bankAccountId,categoryId,type,amount,date,description\n");
+
+        for (Operation operation : operations) {
+            csv.append(String.format("%s,%s,%s,%s,%.2f,%s,%s\n",
+                    operation.getId(),
+                    operation.getBankAccountId(),
+                    operation.getCategoryId(),
+                    operation.getType().name(),
+                    operation.getAmount(),
+                    operation.getDate().toString(),
+                    escapeCsv(operation.getDescription())));
+        }
+
+        return csv.toString();
+    }
+
+    @Override
+    public String exportAll(List<BankAccount> accounts, List<Category> categories, List<Operation> operations) {
+        StringBuilder csv = new StringBuilder();
+        csv.append("=== ACCOUNTS ===\n");
+        csv.append(exportAccounts(accounts));
+        csv.append("\n=== CATEGORIES ===\n");
+        csv.append(exportCategories(categories));
+        csv.append("\n=== OPERATIONS ===\n");
+        csv.append(exportOperations(operations));
+
+        return csv.toString();
+    }
+
+    @Override
+    public boolean exportToFile(String filePath, List<BankAccount> accounts, List<Category> categories, List<Operation> operations) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            String csvContent = exportAll(accounts, categories, operations);
+            writer.write(csvContent);
+            System.out.println("CSV data successfully exported to: " + filePath);
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error writing CSV file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public String getSupportedFormat() {
+        return "CSV";
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+}package hse.hsebank.visitor;
+
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+
+import java.util.List;
+
+/**
+ * Visitor interface for data export
+ */
+public interface DataExportVisitor {
+    String exportAccounts(List<BankAccount> accounts);
+    String exportCategories(List<Category> categories);
+    String exportOperations(List<Operation> operations);
+    String exportAll(List<BankAccount> accounts, List<Category> categories, List<Operation> operations);
+
+    boolean exportToFile(String filePath, List<BankAccount> accounts, List<Category> categories, List<Operation> operations);
+    String getSupportedFormat();
+}package hse.hsebank.visitor;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+
+@Component
+public class JsonExportVisitor implements DataExportVisitor {
+    private final ObjectMapper objectMapper;
+
+    public JsonExportVisitor() {
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+    }
+
+    @Override
+    public String exportAccounts(List<BankAccount> accounts) {
+        try {
+            List<Map<String, Object>> simplifiedAccounts = new ArrayList<>();
+            for (BankAccount account : accounts) {
+                Map<String, Object> accMap = new LinkedHashMap<>();
+                accMap.put("id", account.getId());
+                accMap.put("name", account.getName());
+                accMap.put("balance", account.getBalance());
+                simplifiedAccounts.add(accMap);
+            }
+            return objectMapper.writeValueAsString(simplifiedAccounts);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing accounts to JSON: " + e.getMessage());
+            return "[]";
+        }
+    }
+
+    @Override
+    public String exportCategories(List<Category> categories) {
+        try {
+            List<Map<String, Object>> simplifiedCategories = new ArrayList<>();
+            for (Category category : categories) {
+                Map<String, Object> catMap = new LinkedHashMap<>();
+                catMap.put("id", category.getId());
+                catMap.put("type", category.getType().name());
+                catMap.put("name", category.getName());
+                simplifiedCategories.add(catMap);
+            }
+            return objectMapper.writeValueAsString(simplifiedCategories);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing categories to JSON: " + e.getMessage());
+            return "[]";
+        }
+    }
+
+    @Override
+    public String exportOperations(List<Operation> operations) {
+        try {
+            List<Map<String, Object>> simplifiedOperations = new ArrayList<>();
+            for (Operation operation : operations) {
+                Map<String, Object> opMap = new LinkedHashMap<>();
+                opMap.put("id", operation.getId());
+                opMap.put("bankAccountId", operation.getBankAccountId());
+                opMap.put("categoryId", operation.getCategoryId());
+                opMap.put("type", operation.getType().name());
+                opMap.put("amount", operation.getAmount());
+                opMap.put("date", operation.getDate().toString());
+                opMap.put("description", operation.getDescription());
+                simplifiedOperations.add(opMap);
+            }
+            return objectMapper.writeValueAsString(simplifiedOperations);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing operations to JSON: " + e.getMessage());
+            return "[]";
+        }
+    }
+
+    @Override
+    public String exportAll(List<BankAccount> accounts, List<Category> categories, List<Operation> operations) {
+        Map<String, Object> allData = new LinkedHashMap<>();
+        allData.put("accounts", accounts != null ? accounts : List.of());
+        allData.put("categories", categories != null ? categories : List.of());
+        allData.put("operations", operations != null ? operations : List.of());
+        allData.put("exportTimestamp", java.time.LocalDateTime.now().toString());
+        allData.put("version", "1.0");
+
+        try {
+            return objectMapper.writeValueAsString(allData);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing all data to JSON: " + e.getMessage());
+            return "{}";
+        }
+    }
+
+    @Override
+    public boolean exportToFile(String filePath, List<BankAccount> accounts, List<Category> categories, List<Operation> operations) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            Map<String, Object> allData = new LinkedHashMap<>();
+
+            List<Map<String, Object>> simplifiedAccounts = new ArrayList<>();
+            for (BankAccount account : accounts) {
+                Map<String, Object> accMap = new LinkedHashMap<>();
+                accMap.put("id", account.getId());
+                accMap.put("name", account.getName());
+                accMap.put("balance", account.getBalance());
+                simplifiedAccounts.add(accMap);
+            }
+
+            List<Map<String, Object>> simplifiedCategories = new ArrayList<>();
+            for (Category category : categories) {
+                Map<String, Object> catMap = new LinkedHashMap<>();
+                catMap.put("id", category.getId());
+                catMap.put("type", category.getType().name());
+                catMap.put("name", category.getName());
+                simplifiedCategories.add(catMap);
+            }
+
+            List<Map<String, Object>> simplifiedOperations = getMaps(operations);
+
+            allData.put("accounts", simplifiedAccounts);
+            allData.put("categories", simplifiedCategories);
+            allData.put("operations", simplifiedOperations);
+            allData.put("exportTimestamp", java.time.LocalDateTime.now().toString());
+            allData.put("version", "1.0");
+
+            String jsonContent = objectMapper.writeValueAsString(allData);
+            writer.write(jsonContent);
+            System.out.println("JSON data successfully exported to: " + filePath);
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error writing JSON file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static List<Map<String, Object>> getMaps(List<Operation> operations) {
+        List<Map<String, Object>> simplifiedOperations = new ArrayList<>();
+        for (Operation operation : operations) {
+            Map<String, Object> opMap = new LinkedHashMap<>();
+            opMap.put("id", operation.getId());
+            opMap.put("bankAccountId", operation.getBankAccountId());
+            opMap.put("categoryId", operation.getCategoryId());
+            opMap.put("type", operation.getType().name());
+            opMap.put("amount", operation.getAmount());
+            opMap.put("date", operation.getDate().toString());
+            opMap.put("description", operation.getDescription());
+            simplifiedOperations.add(opMap);
+        }
+        return simplifiedOperations;
+    }
+
+    @Override
+    public String getSupportedFormat() {
+        return "JSON";
+    }
+}package hse.hsebank.visitor;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import hse.hsebank.domains.BankAccount;
+import hse.hsebank.domains.Category;
+import hse.hsebank.domains.Operation;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+
+@Component
+public class YamlExportVisitor implements DataExportVisitor {
+    private final ObjectMapper yamlMapper;
+
+    public YamlExportVisitor() {
+        this.yamlMapper = new ObjectMapper(new YAMLFactory());
+        this.yamlMapper.registerModule(new JavaTimeModule());
+        this.yamlMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.yamlMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
+    @Override
+    public String exportAccounts(List<BankAccount> accounts) {
+        try {
+            List<Map<String, Object>> simplifiedAccounts = new ArrayList<>();
+            for (BankAccount account : accounts) {
+                Map<String, Object> accMap = new LinkedHashMap<>();
+                accMap.put("id", account.getId());
+                accMap.put("name", account.getName());
+                accMap.put("balance", account.getBalance());
+                simplifiedAccounts.add(accMap);
+            }
+
+            return yamlMapper.writeValueAsString(simplifiedAccounts);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing accounts to YAML: " + e.getMessage());
+            return "[]";
+        }
+    }
+
+    @Override
+    public String exportCategories(List<Category> categories) {
+        try {
+            List<Map<String, Object>> simplifiedCategories = new ArrayList<>();
+            for (Category category : categories) {
+                Map<String, Object> catMap = new LinkedHashMap<>();
+                catMap.put("id", category.getId());
+                catMap.put("type", category.getType().name());
+                catMap.put("name", category.getName());
+                simplifiedCategories.add(catMap);
+            }
+
+            return yamlMapper.writeValueAsString(simplifiedCategories);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing categories to YAML: " + e.getMessage());
+            return "[]";
+        }
+    }
+
+    @Override
+    public String exportOperations(List<Operation> operations) {
+        try {
+            List<Map<String, Object>> simplifiedOperations = new ArrayList<>();
+            for (Operation operation : operations) {
+                Map<String, Object> opMap = new LinkedHashMap<>();
+                opMap.put("id", operation.getId());
+                opMap.put("bankAccountId", operation.getBankAccountId());
+                opMap.put("categoryId", operation.getCategoryId());
+                opMap.put("type", operation.getType().name());
+                opMap.put("amount", operation.getAmount());
+                opMap.put("date", operation.getDate().toString());
+                opMap.put("description", operation.getDescription());
+                simplifiedOperations.add(opMap);
+            }
+
+            return yamlMapper.writeValueAsString(simplifiedOperations);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing operations to YAML: " + e.getMessage());
+            return "[]";
+        }
+    }
+
+    @Override
+    public String exportAll(List<BankAccount> accounts, List<Category> categories, List<Operation> operations) {
+        Map<String, Object> allData = new LinkedHashMap<>();
+        allData.put("accounts", accounts != null ? accounts : List.of());
+        allData.put("categories", categories != null ? categories : List.of());
+        allData.put("operations", operations != null ? operations : List.of());
+        allData.put("exportTimestamp", java.time.LocalDateTime.now().toString());
+        allData.put("version", "1.0");
+
+        try {
+            return yamlMapper.writeValueAsString(allData);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error serializing all data to YAML: " + e.getMessage());
+            return "";
+        }
+    }
+
+    @Override
+    public boolean exportToFile(String filePath, List<BankAccount> accounts, List<Category> categories, List<Operation> operations) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            Map<String, Object> allData = new LinkedHashMap<>();
+
+            List<Map<String, Object>> simplifiedAccounts = new ArrayList<>();
+            for (BankAccount account : accounts) {
+                Map<String, Object> accMap = new LinkedHashMap<>();
+                accMap.put("id", account.getId());
+                accMap.put("name", account.getName());
+                accMap.put("balance", account.getBalance());
+                simplifiedAccounts.add(accMap);
+            }
+
+            List<Map<String, Object>> simplifiedCategories = new ArrayList<>();
+            for (Category category : categories) {
+                Map<String, Object> catMap = new LinkedHashMap<>();
+                catMap.put("id", category.getId());
+                catMap.put("type", category.getType().name());
+                catMap.put("name", category.getName());
+                simplifiedCategories.add(catMap);
+            }
+
+            List<Map<String, Object>> simplifiedOperations = getMaps(operations);
+
+            allData.put("accounts", simplifiedAccounts);
+            allData.put("categories", simplifiedCategories);
+            allData.put("operations", simplifiedOperations);
+            allData.put("exportTimestamp", java.time.LocalDateTime.now().toString());
+            allData.put("version", "1.0");
+
+            String yamlContent = yamlMapper.writeValueAsString(allData);
+            writer.write(yamlContent);
+            System.out.println("YAML data successfully exported to: " + filePath);
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error writing YAML file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static List<Map<String, Object>> getMaps(List<Operation> operations) {
+        List<Map<String, Object>> simplifiedOperations = new ArrayList<>();
+        for (Operation operation : operations) {
+            Map<String, Object> opMap = new LinkedHashMap<>();
+            opMap.put("id", operation.getId());
+            opMap.put("bankAccountId", operation.getBankAccountId());
+            opMap.put("categoryId", operation.getCategoryId());
+            opMap.put("type", operation.getType().name());
+            opMap.put("amount", operation.getAmount());
+            opMap.put("date", operation.getDate().toString());
+            opMap.put("description", operation.getDescription());
+            simplifiedOperations.add(opMap);
+        }
+        return simplifiedOperations;
+    }
+
+    @Override
+    public String getSupportedFormat() {
+        return "YAML";
+    }
+}
