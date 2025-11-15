@@ -1,0 +1,78 @@
+src/main/java/org/moscowzoo/
+├── ZooApplication.java
+├── runner/
+│   └── ApplicationRunner.java
+├── configuration/
+│   └── AppConfig.java
+├── domain/
+│   ├── entities/
+│   │   ├── alive/
+│   │   │   ├── Animal.java (abstract)
+│   │   │   ├── Herbo.java (abstract)
+│   │   │   ├── Predator.java (abstract)
+│   │   │   ├── Monkey.java
+│   │   │   ├── Rabbit.java
+│   │   │   ├── Tiger.java
+│   │   │   └── Wolf.java
+│   │   └── things/
+│   │       ├── Thing.java (abstract)
+│   │       ├── Table.java
+│   │       └── Computer.java
+│   ├── interfaces/
+│   │   ├── IAlive.java
+│   │   └── IInventory.java
+│   └── valueobjects/
+│       ├── HealthStatus.java (enum)
+│       └── KindnessLevel.java
+├── services/
+│   ├── VeterinaryClinic.java
+│   ├── ZooInventoryService.java
+│   ├── AnimalRegistrationService.java
+│   ├── FoodCalculationService.java
+│   └── ContactZooService.java
+├── repositories/
+│   ├── AnimalRepository.java (interface)
+│   ├── InventoryRepository.java (interface)
+│   └── impl/
+│       ├── InMemoryAnimalRepository.java
+│       └── InMemoryInventoryRepository.java
+├── ui/
+│   ├── ConsoleMenu.java
+│   ├── ConsolePrinter.java
+│   └── ConsoleReader.java
+└── utils/
+    ├── InputValidator.java
+    └── MessageFormatter.java
+
+src/test/java/org/moscowzoo/
+├── services/
+│   ├── VeterinaryClinicTest.java
+│   ├── AnimalRegistrationServiceTest.java
+│   ├── FoodCalculationServiceTest.java
+│   └── ContactZooServiceTest.java
+├── domain/
+│   └── entities/
+│       └── alive/
+│           ├── RabbitTest.java
+│           ├── TigerTest.java
+│           └── MonkeyTest.java
+└── ui/
+    └── ConsoleMenuTest.java
+
+src/main/resources/
+└── application.properties
+
+config/
+└── checkstyle/
+    └── checkstyle.xml
+
+gradle/
+└── wrapper/
+    ├── gradle-wrapper.jar
+    └── gradle-wrapper.properties
+
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradlew
+├── gradlew.bat
+└── README.md
