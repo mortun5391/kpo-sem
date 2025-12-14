@@ -8,6 +8,7 @@ import hse.kpo.domains.HandEngine;
 import hse.kpo.domains.LevitationEngine;
 import hse.kpo.domains.PedalEngine;
 import hse.kpo.enums.ProductionTypes;
+import jakarta.persistence.Entity;
 import lombok.ToString;
 
 @JsonTypeInfo(

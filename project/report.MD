@@ -1,4 +1,4 @@
-# Отчет за 2025-11-15
+# Отчет за 2025-03-17
 
 Покупатели: - Customer(name=TestClient, legPower=7, handPower=5, iq=100, car=null, catamaran=null)
 Операция: Продажа: CAR VIN-1 клиенту TestClient (Сила рук: 5, Сила ног: 7, IQ: 100)
