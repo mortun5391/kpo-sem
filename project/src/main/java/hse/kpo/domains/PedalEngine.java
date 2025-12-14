@@ -2,16 +2,22 @@ package hse.kpo.domains;
 
 import hse.kpo.enums.ProductionTypes;
 import hse.kpo.interfaces.Engine;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
- * Класс, реализующий {@link Engine} педального типа.
+ * Класс, реализующий {@link AbstractEngine} педального типа.
  */
 @ToString
 @Getter
-public class PedalEngine implements Engine {
-    private final int size;
+@Entity
+@DiscriminatorValue("PEDAL")
+@NoArgsConstructor
+public class PedalEngine extends AbstractEngine {
+    private int size;
 
     @Override
     public boolean isCompatible(Customer customer, ProductionTypes type) {

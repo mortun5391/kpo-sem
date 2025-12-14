@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: file-storing-service
+  
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:antiplagiarism}
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:admin123}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    show-sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+server:
+  port: 8081
+
+file:
+  upload:
+    dir: /app/uploads
+  max-size: 10485760
+
+logging:
+  level:
+    com.antiplagiarism: INFO
+
+analysis:
+  service:
+    url: ${ANALYSIS_SERVICE_URL:http://localhost:8082}

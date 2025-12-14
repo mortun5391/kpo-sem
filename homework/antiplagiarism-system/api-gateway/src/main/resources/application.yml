@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        - id: work-reports-aggregator
+          uri: http://api-gateway:8080 # Маршрутизирует на себя для агрегации
+          predicates:
+            - Path=/api/works/{workId}/reports
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: aggregateCircuitBreaker
+                fallbackUri: forward:/fallback/aggregate
+        - id: file-storing-service
+          uri: http://file-storing-service:8081
+          predicates:
+            - Path=/api/files/**, /api/works/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/v1/$\{segment}
+
+        - id: analysis-service
+          uri: http://analysis-service:8082
+          predicates:
+            - Path=/api/analyze/**, /api/reports/**, /api/wordcloud/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/v1/$\{segment}
+
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 30s
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
